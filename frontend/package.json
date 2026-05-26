@@ -4,7 +4,7 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
+		"dev": "vite --port $PORT --host --strictPort",
 		"build": "vite build",
 		"preview": "vite preview"
 	},
@@ -13,7 +13,9 @@
 		"vite": "^6.3.5",
 		"typescript": "^5.8.3",
 		"react": "^19.1.0",
-		"react-dom": "^19.1.0"
+		"react-dom": "^19.1.0",
+		"react-router-dom": "^6.30.0",
+		"framer-motion": "^11.18.0"
 	},
 	"devDependencies": {
 		"@types/node": "^22.15.0",

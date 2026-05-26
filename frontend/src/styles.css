@@ -22,183 +22,55 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-width: 320px;
+  overscroll-behavior: none;
 }
 
-/* ── Keyframe animations ──────────────────────────────────────────────────── */
-@keyframes underlineGlow {
-  0%, 100% {
-    box-shadow:
-      0 0 8px rgba(255, 20, 147, 0.55),
-      0 0 18px rgba(255, 20, 147, 0.3);
+/* ── Phone frame — center 430px shell on desktop ─────────────────────────── */
+.phone-frame {
+  min-height: 100vh;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+@media (min-width: 431px) {
+  .phone-frame {
+    background: #080808;
   }
-  50% {
-    box-shadow:
-      0 0 20px rgba(255, 20, 147, 1),
-      0 0 40px rgba(255, 20, 147, 0.65),
-      0 0 70px rgba(255, 20, 147, 0.35);
-  }
 }
 
-@keyframes orbDrift1 {
-  0%, 100% { transform: translate(0px, 0px) scale(1); }
-  33%       { transform: translate(40px, -30px) scale(1.06); }
-  66%       { transform: translate(-25px, 40px) scale(0.94); }
+.phone-screen {
+  width: 100%;
+  max-width: 430px;
+  background: #000;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }
 
-@keyframes orbDrift2 {
-  0%, 100% { transform: translate(0px, 0px) scale(1); }
-  33%       { transform: translate(-50px, 25px) scale(1.1); }
-  66%       { transform: translate(30px, -40px) scale(0.92); }
+/* ── Hide scrollbar in genre strip ───────────────────────────────────────── */
+.phone-screen *::-webkit-scrollbar {
+  display: none;
 }
 
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes checkPop {
-  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
-  60%  { transform: scale(1.25) rotate(5deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+@keyframes pinkPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,20,147,0.35); }
+  50%       { box-shadow: 0 0 28px rgba(255,20,147,0.7); }
 }
 
-/* ── Scroll-word pulsing underline ────────────────────────────────────────── */
-.scroll-word {
-  position: relative;
-  display: inline-block;
-}
-
-.scroll-word::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: #FF1493;
-  border-radius: 3px;
-  animation: underlineGlow 2s ease-in-out infinite;
-}
-
-/* ── Hero subheadline fade-in ─────────────────────────────────────────────── */
-.hero-sub {
-  opacity: 0;
-  animation: fadeIn 0.5s ease 0.4s forwards;
-}
-
-/* ── Background orbs ──────────────────────────────────────────────────────── */
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(90px);
-  will-change: transform;
-}
-
-.orb-1 {
-  width: 700px;
-  height: 700px;
-  background: radial-gradient(circle, rgba(255, 20, 147, 0.09) 0%, transparent 65%);
-  top: -150px;
-  left: 50%;
-  transform: translateX(-50%);
-  animation: orbDrift1 22s ease-in-out infinite;
-}
-
-.orb-2 {
-  width: 450px;
-  height: 450px;
-  background: radial-gradient(circle, rgba(255, 20, 147, 0.06) 0%, transparent 65%);
-  bottom: 50px;
-  left: 5%;
-  animation: orbDrift2 28s ease-in-out infinite;
-}
-
-.orb-3 {
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(255, 20, 147, 0.05) 0%, transparent 65%);
-  top: 35%;
-  right: 3%;
-  animation: orbDrift1 35s ease-in-out infinite reverse;
-}
-
-/* ── Waitlist input focus ─────────────────────────────────────────────────── */
-.waitlist-input::placeholder {
-  color: #444;
-}
-
-.waitlist-input:focus {
-  border-color: #FF1493 !important;
-  box-shadow: 0 0 0 1px rgba(255, 20, 147, 0.25),
-              0 0 22px rgba(255, 20, 147, 0.18) !important;
-}
-
-/* ── Waitlist submit button hover ─────────────────────────────────────────── */
-.waitlist-btn:hover:not(:disabled) {
-  box-shadow: 0 0 32px rgba(255, 20, 147, 0.65),
-              0 0 64px rgba(255, 20, 147, 0.3) !important;
-  transform: translateY(-2px) !important;
-}
-
-.waitlist-btn:active:not(:disabled) {
-  transform: translateY(0) !important;
-}
-
-/* ── Why cards hover ──────────────────────────────────────────────────────── */
-.why-card {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.why-card:hover {
-  border-color: rgba(255, 20, 147, 0.55) !important;
-  box-shadow: 0 0 32px rgba(255, 20, 147, 0.12),
-              inset 0 0 40px rgba(255, 20, 147, 0.04) !important;
-  transform: translateY(-4px);
-}
-
-/* ── Pricing card hover ───────────────────────────────────────────────────── */
-.pricing-card {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.pricing-card:hover {
-  border-color: rgba(255, 20, 147, 0.65) !important;
-  box-shadow: 0 0 32px rgba(255, 20, 147, 0.28) !important;
-  transform: scale(1.02);
-}
-
-/* ── Success checkmark animation ─────────────────────────────────────────── */
-.success-checkmark {
-  display: inline-block;
-  animation: checkPop 0.35s ease forwards;
-}
-
-/* ── Social icon hover ────────────────────────────────────────────────────── */
-.social-icon:hover {
-  border-color: rgba(255, 20, 147, 0.5) !important;
-  color: #FF1493 !important;
-}
-
-/* ── Step stagger-fade via JS class ──────────────────────────────────────── */
-.step-visible {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-}
-
-/* ── Responsive tweaks ────────────────────────────────────────────────────── */
-@media (max-width: 767px) {
-  .orb-1 { width: 340px; height: 340px; }
-  .orb-2 { width: 260px; height: 260px; }
-  .orb-3 { display: none; }
+/* ── Utility ──────────────────────────────────────────────────────────────── */
+button {
+  -webkit-tap-highlight-color: transparent;
 }

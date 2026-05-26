@@ -3,34 +3,47 @@ import path from 'node:path';
 import express from 'express';
 import { Pool } from 'pg';
 
+// ── Global safety-net — keeps the process alive under any circumstance ───────
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException – non-fatal]', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection – non-fatal]', reason);
+});
+
 const app = express();
 app.use(express.json());
 
-// ── Database ────────────────────────────────────────────────────────────────
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-// Prevent unhandled 'error' events from crashing the process when DB is
-// unavailable in the preview sandbox (no Postgres addon wired yet).
-pool.on('error', (err) => {
-  console.error('pg pool error (non-fatal in preview):', err.message);
-});
+// ── Database ─────────────────────────────────────────────────────────────────
+// Only create the pool when DATABASE_URL is explicitly provided. In the preview
+// sandbox there is no Postgres addon, so we skip DB operations entirely.
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : null;
 
-// Create waitlist table on startup
-(async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS waitlist (
-        id SERIAL PRIMARY KEY,
-        email TEXT NOT NULL,
-        role TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(email)
-      )
-    `);
-    console.log('Waitlist table ready.');
-  } catch (err) {
-    console.error('DB init error (non-fatal in preview):', (err as Error).message);
-  }
-})();
+if (pool) {
+  pool.on('error', (err) => {
+    console.error('pg pool error (non-fatal):', err.message);
+  });
+  (async () => {
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS waitlist (
+          id SERIAL PRIMARY KEY,
+          email TEXT NOT NULL,
+          role TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          UNIQUE(email)
+        )
+      `);
+      console.log('Waitlist table ready.');
+    } catch (err) {
+      console.error('DB init error (non-fatal):', (err as Error).message);
+    }
+  })();
+} else {
+  console.log('No DATABASE_URL — DB features disabled (preview mode).');
+}
 
 // ── Routes ──────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
@@ -66,6 +79,13 @@ app.post('/api/waitlist', async (req, res) => {
   }
 
   const validRole = role === 'reader' || role === 'creator' ? role : null;
+
+  if (!pool) {
+    // No DB in preview — acknowledge the signup without persisting
+    console.log(`Waitlist (no-DB): ${trimmed} / ${validRole}`);
+    res.json({ ok: true, message: "you're on the list" });
+    return;
+  }
 
   try {
     await pool.query(
