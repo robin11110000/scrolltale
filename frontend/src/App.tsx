@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { CoinProvider } from './context/CoinContext';
+import { WalletProvider } from './context/WalletContext';
 import BottomNav from './components/BottomNav';
 import DiscoverPage from './pages/DiscoverPage';
 import SeriesPage from './pages/SeriesPage';
@@ -12,28 +13,28 @@ function AppShell() {
   const location = useLocation();
   const isReader = location.pathname.startsWith('/read/');
   return (
-    <div className="phone-frame">
-      <div className="phone-screen">
-        <Routes>
-          <Route path="/" element={<DiscoverPage />} />
-          <Route path="/series/:id" element={<SeriesPage />} />
-          <Route path="/read/:seriesId/:episodeId" element={<ReaderPage />} />
-          <Route path="/creator" element={<CreatorPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="*" element={<DiscoverPage />} />
-        </Routes>
-        {!isReader && <BottomNav />}
-      </div>
+    <div>
+      <Routes>
+        <Route path="/" element={<DiscoverPage />} />
+        <Route path="/series/:id" element={<SeriesPage />} />
+        <Route path="/read/:seriesId/:episodeId" element={<ReaderPage />} />
+        <Route path="/creator" element={<CreatorPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="*" element={<DiscoverPage />} />
+      </Routes>
+      {!isReader && <BottomNav />}
     </div>
   );
 }
 
 export default function App() {
   return (
-    <CoinProvider>
-      <BrowserRouter>
-        <AppShell />
-      </BrowserRouter>
-    </CoinProvider>
+    <WalletProvider>
+      <CoinProvider>
+        <BrowserRouter>
+          <AppShell />
+        </BrowserRouter>
+      </CoinProvider>
+    </WalletProvider>
   );
 }

@@ -1,5 +1,4 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 const TABS = [
   {
@@ -49,12 +48,17 @@ export default function BottomNav() {
     }}>
       <nav style={{
         width: '100%',
-        maxWidth: 430,
-        background: '#0a0a0a',
-        borderTop: '1px solid rgba(255,20,147,0.2)',
+        maxWidth: 1200,
+        background: 'rgba(0,0,0,0.9)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        borderTop: '1px solid var(--border)',
         display: 'flex',
-        padding: '10px 0 20px',
+        padding: '10px 0 16px',
         pointerEvents: 'all',
+        margin: '0 24px',
+        borderTopLeftRadius: 'var(--radius-lg)',
+        borderTopRightRadius: 'var(--radius-lg)',
       }}>
         {TABS.map((tab) => {
           const isActive = tab.match(pathname, search);
@@ -72,32 +76,33 @@ export default function BottomNav() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 5,
+                gap: 4,
                 padding: '4px 0',
                 position: 'relative',
               }}
             >
               {isActive && (
-                <motion.div
-                  layoutId="nav-pill"
-                  style={{
-                    position: 'absolute',
-                    top: -10,
-                    width: 36,
-                    height: 3,
-                    background: '#FF1493',
-                    borderRadius: 999,
-                    boxShadow: '0 0 10px rgba(255,20,147,0.7)',
-                  }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                />
+                <div style={{
+                  position: 'absolute',
+                  top: -10,
+                  width: 32,
+                  height: 3,
+                  background: 'var(--accent)',
+                  borderRadius: 999,
+                }} />
               )}
-              <span style={{ fontSize: 20, lineHeight: 1 }}>{tab.icon}</span>
               <span style={{
-                fontFamily: 'Inter, sans-serif',
+                fontSize: 18,
+                lineHeight: 1,
+                opacity: isActive ? 1 : 0.5,
+                transition: 'opacity 0.2s',
+              }}>
+                {tab.icon}
+              </span>
+              <span style={{
                 fontSize: 10,
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#FF1493' : '#555',
+                color: isActive ? 'var(--accent-light)' : 'var(--text-muted)',
                 letterSpacing: '0.03em',
                 textTransform: 'uppercase',
                 transition: 'color 0.2s',
