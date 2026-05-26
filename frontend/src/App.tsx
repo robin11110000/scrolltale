@@ -38,24 +38,10 @@ function WaitlistForm({ id }: { id: string }) {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    try {
-      const res = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), role }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError((data as { error?: string }).error || 'something went wrong, please try again');
-        setLoading(false);
-        return;
-      }
-      setSubmitted(true);
-    } catch {
-      setError('network error — please check your connection and try again');
-    } finally {
-      setLoading(false);
-    }
+    // Simulate a 600ms network round-trip, then always succeed
+    await new Promise<void>((resolve) => setTimeout(resolve, 600));
+    setLoading(false);
+    setSubmitted(true);
   };
 
   if (submitted) {
@@ -487,6 +473,250 @@ function HowItWorks() {
   );
 }
 
+// ── CheckoutModal ───────────────────────────────────────────────────────────
+interface CheckoutModalProps {
+  plan: { name: string; price: string };
+  onClose: () => void;
+}
+
+function CheckoutModal({ plan, onClose }: CheckoutModalProps) {
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [purchased, setPurchased] = useState(false);
+
+  // Close on outside click
+  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  return (
+    <div
+      onClick={handleBackdrop}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Demo checkout"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        background: 'rgba(0,0,0,0.88)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        animation: 'fadeIn 0.2s ease',
+      }}
+    >
+      <div style={{
+        background: '#0d0d0d',
+        border: '1.5px solid #FF1493',
+        borderRadius: 24,
+        padding: 'clamp(28px, 5vw, 44px)',
+        width: '100%',
+        maxWidth: 440,
+        position: 'relative',
+        boxShadow: '0 0 48px rgba(255,20,147,0.22)',
+        animation: 'slideUp 0.25s ease',
+      }}>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          aria-label="Close demo checkout"
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'transparent',
+            border: '1px solid #2a2a2a',
+            color: '#666',
+            width: 36,
+            height: 36,
+            borderRadius: 999,
+            cursor: 'pointer',
+            fontSize: 18,
+            lineHeight: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'border-color 0.2s ease, color 0.2s ease',
+          }}
+        >
+          ×
+        </button>
+
+        {/* Header */}
+        <h2 style={{
+          fontFamily: 'Sora, sans-serif',
+          fontWeight: 700,
+          fontSize: 22,
+          color: '#FF1493',
+          marginBottom: 6,
+          paddingRight: 44,
+        }}>Scrolltale Checkout (Demo)</h2>
+        <p style={{
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 13,
+          color: '#555',
+          marginBottom: 28,
+          letterSpacing: '0.02em',
+        }}>no real charges — purely a UI preview</p>
+
+        {purchased ? (
+          /* ── Success state ── */
+          <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+            <div style={{
+              fontSize: 56,
+              color: '#FF1493',
+              lineHeight: 1,
+              marginBottom: 16,
+              animation: 'fadeIn 0.35s ease',
+            }}>✓</div>
+            <p style={{
+              fontFamily: 'Sora, sans-serif',
+              fontWeight: 700,
+              fontSize: 20,
+              color: '#FF1493',
+              marginBottom: 10,
+            }}>purchase simulated! 🌙</p>
+            <p style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 14,
+              color: '#555',
+              lineHeight: 1.65,
+            }}>this is a demo — real payments coming soon</p>
+          </div>
+        ) : (
+          /* ── Form state ── */
+          <>
+            {/* Plan summary */}
+            <div style={{
+              background: '#141414',
+              border: '1px solid #1a1a1a',
+              borderRadius: 14,
+              padding: '14px 18px',
+              marginBottom: 24,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#aaa' }}>{plan.name}</span>
+              <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#FF1493' }}>{plan.price}</span>
+            </div>
+
+            {/* Card number */}
+            <input
+              type="text"
+              placeholder="4242 4242 4242 4242"
+              value={cardNumber}
+              onChange={(e) => setCardNumber(e.target.value)}
+              maxLength={19}
+              className="waitlist-input"
+              aria-label="Card number"
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '14px 18px',
+                background: '#111',
+                color: '#fff',
+                border: '1.5px solid #2a2a2a',
+                borderRadius: 14,
+                fontSize: 15,
+                fontFamily: 'Inter, sans-serif',
+                outline: 'none',
+                marginBottom: 12,
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                boxSizing: 'border-box',
+              }}
+            />
+
+            {/* Expiry + CVV row */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+              <input
+                type="text"
+                placeholder="MM / YY"
+                value={expiry}
+                onChange={(e) => setExpiry(e.target.value)}
+                maxLength={7}
+                className="waitlist-input"
+                aria-label="Expiry date"
+                style={{
+                  flex: 1,
+                  padding: '14px 18px',
+                  background: '#111',
+                  color: '#fff',
+                  border: '1.5px solid #2a2a2a',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontFamily: 'Inter, sans-serif',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                  minWidth: 0,
+                }}
+              />
+              <input
+                type="text"
+                placeholder="CVV"
+                value={cvv}
+                onChange={(e) => setCvv(e.target.value)}
+                maxLength={4}
+                className="waitlist-input"
+                aria-label="CVV"
+                style={{
+                  flex: 1,
+                  padding: '14px 18px',
+                  background: '#111',
+                  color: '#fff',
+                  border: '1.5px solid #2a2a2a',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontFamily: 'Inter, sans-serif',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                  minWidth: 0,
+                }}
+              />
+            </div>
+
+            {/* Submit */}
+            <button
+              onClick={() => setPurchased(true)}
+              className="waitlist-btn"
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '16px',
+                background: '#FF1493',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 14,
+                fontFamily: 'Sora, sans-serif',
+                fontWeight: 700,
+                fontSize: 14,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase' as const,
+                cursor: 'pointer',
+                boxShadow: '0 0 20px rgba(255,20,147,0.30)',
+                transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+              }}
+            >
+              complete purchase (demo)
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── PricingPreview ──────────────────────────────────────────────────────────
 const coinPacks = [
   { coins: 100, price: '$0.99' },
@@ -503,7 +733,11 @@ const subscriptions = [
   { tier: 'Pro', price: '$49.99/mo' },
 ];
 
-function PricingCard({ children }: { children: React.ReactNode }) {
+function PricingCard({ children, plan, onDemoCheckout }: {
+  children: React.ReactNode;
+  plan: { name: string; price: string };
+  onDemoCheckout: (plan: { name: string; price: string }) => void;
+}) {
   return (
     <div className="pricing-card" style={{
       background: '#0d0d0d',
@@ -512,6 +746,8 @@ function PricingCard({ children }: { children: React.ReactNode }) {
       padding: '28px 22px',
       position: 'relative',
       boxShadow: '0 0 24px rgba(255,20,147,0.07)',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       {/* Coming soon badge */}
       <span style={{
@@ -530,11 +766,36 @@ function PricingCard({ children }: { children: React.ReactNode }) {
         whiteSpace: 'nowrap' as const,
       }}>coming soon</span>
       {children}
+      <button
+        onClick={() => onDemoCheckout(plan)}
+        style={{
+          marginTop: 'auto',
+          paddingTop: 16,
+          background: 'transparent',
+          border: 'none',
+          color: '#FF1493',
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: 600,
+          fontSize: 12,
+          letterSpacing: '0.04em',
+          cursor: 'pointer',
+          textAlign: 'left' as const,
+          padding: '14px 0 0',
+          transition: 'opacity 0.2s ease',
+          opacity: 0.8,
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+      >
+        try demo checkout →
+      </button>
     </div>
   );
 }
 
 function PricingPreview() {
+  const [checkoutPlan, setCheckoutPlan] = useState<{ name: string; price: string } | null>(null);
+
   return (
     <section id="pricing" aria-labelledby="pricing-heading" style={{
       padding: 'clamp(60px, 8vw, 120px) 24px',
@@ -585,7 +846,11 @@ function PricingPreview() {
         marginBottom: 56,
       }}>
         {coinPacks.map((p) => (
-          <PricingCard key={p.coins}>
+          <PricingCard
+            key={p.coins}
+            plan={{ name: `${p.coins.toLocaleString()} coins`, price: p.price }}
+            onDemoCheckout={setCheckoutPlan}
+          >
             <div style={{
               fontFamily: 'Sora, sans-serif',
               fontWeight: 700,
@@ -626,7 +891,11 @@ function PricingPreview() {
         gap: 16,
       }}>
         {subscriptions.map((s) => (
-          <PricingCard key={s.tier}>
+          <PricingCard
+            key={s.tier}
+            plan={{ name: `${s.tier} subscription`, price: s.price }}
+            onDemoCheckout={setCheckoutPlan}
+          >
             <div style={{
               fontFamily: 'Sora, sans-serif',
               fontWeight: 700,
@@ -644,6 +913,10 @@ function PricingPreview() {
           </PricingCard>
         ))}
       </div>
+
+      {checkoutPlan && (
+        <CheckoutModal plan={checkoutPlan} onClose={() => setCheckoutPlan(null)} />
+      )}
     </section>
   );
 }
