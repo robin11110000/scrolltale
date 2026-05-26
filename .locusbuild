@@ -1,0 +1,17 @@
+{
+  "services": {
+    "web": {
+      "path": ".",
+      "port": 8080,
+      "healthCheck": "/health",
+      "env": {
+        "DATABASE_URL": "${{db.DATABASE_URL}}"
+      }
+    }
+  },
+  "addons": {
+    "db": {
+      "type": "postgres"
+    }
+  }
+}
