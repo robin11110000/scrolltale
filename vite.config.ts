@@ -8,6 +8,9 @@ const apiProxyTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:4000';
 export default defineConfig({
   root: path.resolve(__dirname, 'frontend'),
   plugins: [react()],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   server: {
     host: '0.0.0.0',
     strictPort: true,
