@@ -7,5 +7,4 @@ build
 .DS_Store
 *.log
 .vite
-.turbo.locus-snapshot/
-.locus-snapshot/
+.turbo

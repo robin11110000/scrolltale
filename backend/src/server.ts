@@ -54,15 +54,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'scrolltale-api' });
 });
 
-app.get('/', (_req, res) => {
-  res.json({
-    service: 'Scrolltale API',
-    routes: [
-      { method: 'POST', path: '/api/waitlist', description: 'Join the waitlist', body: '{ email, role? }' },
-      { method: 'GET',  path: '/api/health',   description: 'Health check' },
-    ],
-  });
-});
+// Root route handled by the SPA fallback below — no JSON response here.
 
 app.post('/api/waitlist', async (req, res) => {
   const { email, role } = req.body as { email?: string; role?: string };
