@@ -3,7 +3,7 @@
     "web": {
       "path": ".",
       "port": 8080,
-      "healthCheck": "/health",
+      "healthCheck": "/api/health",
       "env": {
         "DATABASE_URL": "${{db.DATABASE_URL}}"
       }
