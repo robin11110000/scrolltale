@@ -8,6 +8,11 @@ app.use(express.json());
 
 // ── Database ────────────────────────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Prevent unhandled 'error' events from crashing the process when DB is
+// unavailable in the preview sandbox (no Postgres addon wired yet).
+pool.on('error', (err) => {
+  console.error('pg pool error (non-fatal in preview):', err.message);
+});
 
 // Create waitlist table on startup
 (async () => {
