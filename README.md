@@ -4,8 +4,7 @@
 
 A decentralized webtoon platform where readers own their access as NFT series passes, and creators earn royalties on every resale — forever. Built on **Base Sepolia** with thirdweb. Submitted to the Locus Founder hackathon.
 
-🔗 **Live demo:** [your-vercel-url.vercel.app](https://your-vercel-url.vercel.app)
-🎥 **Demo video:** [link to your Loom / YouTube]
+🔗 **Live demo:** [https://scrolltale-weld.vercel.app/](https://scrolltale-weld.vercel.app/)
 📜 **Smart contract:** [`0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920`](https://sepolia.basescan.org/address/0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920) on Base Sepolia
 
 ---
