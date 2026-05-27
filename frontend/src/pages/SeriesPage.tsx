@@ -39,7 +39,7 @@ function PassCard({
   isPurchasing,
 }: {
   tier: 'reader' | 'patron';
-  pass: PassTier;
+  pass: PassTier | null;
   seriesId: string;
   seriesGradient: string;
   onBuy: () => void;
@@ -48,6 +48,57 @@ function PassCard({
 }) {
   const { isConnected } = useWallet();
   const { hasAccess } = useCoins();
+
+  if (!pass) {
+    return (
+      <div style={{
+        background: seriesGradient,
+        borderRadius: 'var(--radius-lg)',
+        padding: 20,
+        position: 'relative',
+        overflow: 'hidden',
+        opacity: 0.5,
+        border: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 18,
+            color: '#fff',
+            marginBottom: 4,
+          }}>
+            {tier === 'reader' ? 'Reader Pass' : 'Patron Pass'}
+          </h3>
+          <p style={{
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.5)',
+            marginBottom: 16,
+          }}>
+            Coming Soon
+          </p>
+          <span style={{
+            background: 'rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '4px 12px',
+            borderRadius: 999,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            display: 'inline-block',
+          }}>
+            Not available
+          </span>
+        </div>
+      </div>
+    );
+  }
   
   const canAccess = hasAccess(seriesId, tier);
   const isAccessible = isOwned || canAccess;
@@ -175,9 +226,8 @@ function UnlockModal({
   onClose: () => void;
 }) {
   const { balance, spendCoins } = useCoins();
-  const { isConnected, address, connecting } = useWallet();
   const canAfford = balance >= episode.coinCost;
-  const [phase, setPhase] = useState<'idle' | 'connecting' | 'unlocking' | 'done' | 'broke'>('idle');
+  const [phase, setPhase] = useState<'connect' | 'unlock' | 'unlocking' | 'done' | 'broke'>('connect');
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -243,6 +293,70 @@ function UnlockModal({
               It's yours forever.
             </p>
           </motion.div>
+        ) : phase === 'connect' ? (
+          <>
+            <p style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18,
+              color: 'var(--text)', marginBottom: 4,
+            }}>
+              Unlock Episode {episode.number}
+            </p>
+            <p style={{
+              fontSize: 13, color: 'var(--text-muted)',
+              marginBottom: 20,
+            }}>
+              {episode.title}
+            </p>
+            <p style={{
+              fontSize: 13, color: 'var(--text-secondary)',
+              textAlign: 'center', marginBottom: 20, lineHeight: 1.6,
+            }}>
+              Connect your wallet to unlock this episode with coins.
+            </p>
+            <div style={{ width: '100%' }}>
+              <ConnectButton
+                client={client}
+                connectModal={{ 
+                  size: "compact",
+                  title: "Connect to Unlock Episode",
+                  showThirdwebBranding: false
+                }}
+                wallets={wallets}
+                connectButton={{
+                  style: {
+                    width: '100%',
+                    padding: '14px',
+                    background: 'var(--accent)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 0 0 rgba(124,58,237,0)',
+                  }
+                }}
+                onConnect={() => setPhase('unlock')}
+              />
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: 14,
+                cursor: 'pointer',
+                marginTop: 8,
+              }}
+            >
+              Cancel
+            </button>
+          </>
         ) : (
           <>
             <p style={{
@@ -253,48 +367,10 @@ function UnlockModal({
             </p>
             <p style={{
               fontSize: 13, color: 'var(--text-muted)',
-              marginBottom: isConnected ? 16 : 24,
+              marginBottom: 16,
             }}>
               {episode.title}
             </p>
-
-            {isConnected && address && (
-              <div style={{
-                background: 'var(--surface)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '10px 16px',
-                marginBottom: 20,
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}>
-                <div style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: '#10b981',
-                  boxShadow: '0 0 8px rgba(16,185,129,0.4)',
-                }} />
-                <span style={{
-                  fontSize: 11,
-                  color: 'var(--text-muted)',
-                  marginRight: 8,
-                }}>
-                  Connected:
-                </span>
-                <code style={{
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  color: 'var(--text)',
-                  background: 'rgba(124,58,237,0.1)',
-                  padding: '2px 6px',
-                  borderRadius: 4,
-                }}>
-                  {address.slice(0, 6)}...{address.slice(-4)}
-                </code>
-              </div>
-            )}
 
             <div style={{
               background: 'var(--surface)',
@@ -348,12 +424,12 @@ function UnlockModal({
               <div style={{ width: '100%' }}>
                 <ConnectButton
                   client={client}
+                  wallets={wallets}
                   connectModal={{ 
                     size: "compact",
                     title: "Connect to Unlock Episode",
-                    showThirdwebBranding: false
+                    showThirdwebBranding: false,
                   }}
-                  wallets={wallets}
                   connectButton={{
                     style: {
                       width: '100%',
@@ -362,20 +438,14 @@ function UnlockModal({
                       border: 'none',
                       borderRadius: 'var(--radius-md)',
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 700,
+                      fontWeight: '700',
                       fontSize: '14px',
                       color: '#fff',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      boxShadow: '0 0 0 rgba(124,58,237,0)',
                     }
                   }}
                 />
-                <style jsx>{`
-                  button:hover {
-                    box-shadow: 0 0 30px rgba(124,58,237,0.5) !important;
-                  }
-                `}</style>
               </div>
             ) : (
               <motion.button

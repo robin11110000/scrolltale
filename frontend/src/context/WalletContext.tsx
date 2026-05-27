@@ -30,8 +30,10 @@ const WalletContext = createContext<WalletContextType | null>(null);
 export function WalletProvider({ children }: { children: ReactNode }) {
   const account = useActiveAccount();
   const { disconnect } = useDisconnect();
-  const [isConnected, setIsConnected] = useState(false);
-  const [address, setAddress] = useState<string | null>(null);
+  
+  // Use Thirdweb's state directly
+  const isConnected = !!account;
+  const address = account?.address || null;
   const [connecting, setConnecting] = useState(false);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
@@ -103,8 +105,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     disconnect();
     localStorage.removeItem('scrolltale_session');
     setSessionToken(null);
-    setAddress(null);
-    setIsConnected(false);
   };
 
   const signMessage = async (message: string): Promise<string | null> => {
