@@ -4,6 +4,14 @@ export interface Episode {
   title: string;
   isFree: boolean;
   coinCost: number;
+  isPatronOnly?: boolean;
+  isBonus?: boolean;
+}
+
+export interface PassTier {
+  tokenId: number;
+  priceEth: string;
+  label: string;
 }
 
 export interface Series {
@@ -16,6 +24,10 @@ export interface Series {
   bannerGradient: string;
   accentColor: string;
   episodes: Episode[];
+  passes: {
+    reader: PassTier;
+    patron: PassTier;
+  };
 }
 
 const TITLE_BANKS = [
@@ -24,15 +36,29 @@ const TITLE_BANKS = [
   ['The Keeper', 'Dead Worlds', 'Horizon Zero', 'The Spiral', 'Gravity Well', 'Starfall', 'Between Realms', 'The Summoning', 'Last Gate', 'Convergence'],
 ];
 
-function makeEpisodes(count: number, bank: number): Episode[] {
+function makeEpisodes(count: number, bank: number, hasPatronBonus = false): Episode[] {
   const titles = TITLE_BANKS[bank % TITLE_BANKS.length];
-  return Array.from({ length: count }, (_, i) => ({
+  const episodes = Array.from({ length: count }, (_, i) => ({
     id: `ep${i + 1}`,
     number: i + 1,
     title: titles[i] ?? `Chapter ${i + 1}`,
     isFree: i < 3,
     coinCost: i < 3 ? 0 : 10,
   }));
+
+  if (hasPatronBonus) {
+    episodes.push({
+      id: `ep${count + 1}`,
+      number: count + 1,
+      title: 'Resonance (Patron Bonus)',
+      isFree: false,
+      coinCost: 0,
+      isPatronOnly: true,
+      isBonus: true,
+    });
+  }
+
+  return episodes;
 }
 
 export const ALL_SERIES: Series[] = [
@@ -45,7 +71,11 @@ export const ALL_SERIES: Series[] = [
     coverGradient: 'linear-gradient(145deg, #0a0012 0%, #2d0042 55%, #6b0080 100%)',
     bannerGradient: 'linear-gradient(180deg, #0a0012 0%, #2d0042 70%, #000 100%)',
     accentColor: '#9b00cc',
-    episodes: makeEpisodes(10, 0),
+    episodes: makeEpisodes(10, 0, true),
+    passes: {
+      reader: { tokenId: 0, priceEth: '0.001', label: 'Reader Pass' },
+      patron: { tokenId: 1, priceEth: '0.005', label: 'Patron Pass' },
+    },
   },
   {
     id: 'midnight-bloom',
@@ -57,6 +87,10 @@ export const ALL_SERIES: Series[] = [
     bannerGradient: 'linear-gradient(180deg, #0d0010 0%, #1f0030 70%, #000 100%)',
     accentColor: '#cc1493',
     episodes: makeEpisodes(9, 1),
+    passes: {
+      reader: { tokenId: 2, priceEth: '0.001', label: 'Reader Pass' },
+      patron: { tokenId: 3, priceEth: '0.005', label: 'Patron Pass' },
+    },
   },
   {
     id: 'void-walker',
@@ -68,6 +102,10 @@ export const ALL_SERIES: Series[] = [
     bannerGradient: 'linear-gradient(180deg, #000814 0%, #000e2a 70%, #000 100%)',
     accentColor: '#0044ff',
     episodes: makeEpisodes(10, 2),
+    passes: {
+      reader: { tokenId: 4, priceEth: '0.001', label: 'Reader Pass' },
+      patron: { tokenId: 5, priceEth: '0.005', label: 'Patron Pass' },
+    },
   },
   {
     id: 'static-hearts',
@@ -79,6 +117,10 @@ export const ALL_SERIES: Series[] = [
     bannerGradient: 'linear-gradient(180deg, #0a080a 0%, #181310 70%, #000 100%)',
     accentColor: '#cc8800',
     episodes: makeEpisodes(8, 0),
+    passes: {
+      reader: { tokenId: 6, priceEth: '0.001', label: 'Reader Pass' },
+      patron: { tokenId: 7, priceEth: '0.005', label: 'Patron Pass' },
+    },
   },
   {
     id: 'crimson-protocol',
@@ -90,6 +132,10 @@ export const ALL_SERIES: Series[] = [
     bannerGradient: 'linear-gradient(180deg, #100000 0%, #2a0000 70%, #000 100%)',
     accentColor: '#cc0000',
     episodes: makeEpisodes(10, 1),
+    passes: {
+      reader: { tokenId: 8, priceEth: '0.001', label: 'Reader Pass' },
+      patron: { tokenId: 9, priceEth: '0.005', label: 'Patron Pass' },
+    },
   },
   {
     id: 'soft-apocalypse',
@@ -101,6 +147,10 @@ export const ALL_SERIES: Series[] = [
     bannerGradient: 'linear-gradient(180deg, #050005 0%, #100018 70%, #000 100%)',
     accentColor: '#7700cc',
     episodes: makeEpisodes(9, 2),
+    passes: {
+      reader: { tokenId: 10, priceEth: '0.001', label: 'Reader Pass' },
+      patron: { tokenId: 11, priceEth: '0.005', label: 'Patron Pass' },
+    },
   },
 ];
 

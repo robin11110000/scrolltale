@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ConnectButton } from "thirdweb/react";
 import { useCoins } from '../context/CoinContext';
 import { useWallet, client, wallets } from '../context/WalletContext';
-import { ALL_SERIES, type Episode } from '../data/series';
+import { ALL_SERIES, type Episode, type PassTier } from '../data/series';
 
 function AnimatedCoinCount({ value }: { value: number }) {
   const display = useRef(value);
@@ -27,6 +27,142 @@ function AnimatedCoinCount({ value }: { value: number }) {
   }, [value]);
 
   return <>{display.current.toLocaleString()}</>;
+}
+
+function PassCard({
+  tier,
+  pass,
+  seriesId,
+  seriesGradient,
+  onBuy,
+  isOwned,
+  isPurchasing,
+}: {
+  tier: 'reader' | 'patron';
+  pass: PassTier;
+  seriesId: string;
+  seriesGradient: string;
+  onBuy: () => void;
+  isOwned: boolean;
+  isPurchasing: boolean;
+}) {
+  const { isConnected } = useWallet();
+  const { hasAccess } = useCoins();
+  
+  const canAccess = hasAccess(seriesId, tier);
+  const isAccessible = isOwned || canAccess;
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      style={{
+        background: seriesGradient,
+        borderRadius: 'var(--radius-lg)',
+        padding: 20,
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: isAccessible ? 'default' : 'pointer',
+        border: isAccessible ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
+      }}
+      onClick={isAccessible ? undefined : onBuy}
+    >
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%)',
+      }} />
+      
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <div>
+            <h3 style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 18,
+              color: '#fff',
+              marginBottom: 4,
+            }}>
+              {pass.label}
+            </h3>
+            <p style={{
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.7)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              {tier === 'patron' ? 'Full Access + Bonus' : 'All Episodes'}
+            </p>
+          </div>
+          
+          {isAccessible && (
+            <span style={{
+              background: 'var(--accent)',
+              color: '#fff',
+              fontSize: 10,
+              fontWeight: 700,
+              padding: '4px 12px',
+              borderRadius: 999,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}>
+              Owned
+            </span>
+          )}
+        </div>
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <div>
+            <p style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 24,
+              color: '#fff',
+              marginBottom: 2,
+            }}>
+              {pass.priceEth} ETH
+            </p>
+            <p style={{
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.6)',
+            }}>
+              + 5% creator royalty on resale
+            </p>
+          </div>
+
+          {!isAccessible && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={isPurchasing || !isConnected}
+              style={{
+                background: isPurchasing ? 'rgba(255,255,255,0.1)' : '#fff',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                padding: '10px 16px',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: 13,
+                color: isPurchasing ? 'rgba(255,255,255,0.6)' : '#000',
+                cursor: isPurchasing || !isConnected ? 'not-allowed' : 'pointer',
+                opacity: !isConnected ? 0.6 : 1,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isPurchasing && isConnected) onBuy();
+              }}
+            >
+              {isPurchasing ? 'Minting...' : !isConnected ? 'Connect Wallet' : 'Buy Pass'}
+            </motion.button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 function UnlockModal({
@@ -305,7 +441,16 @@ function EpisodeRow({
   onLocked: () => void;
 }) {
   const navigate = useNavigate();
-  const accessible = episode.isFree || isOwned;
+  const { hasAccess } = useCoins();
+  
+  const hasReaderPass = hasAccess(seriesId, 'reader');
+  const hasPatronPass = hasAccess(seriesId, 'patron');
+  const unlockedByPass = hasReaderPass || hasPatronPass;
+  
+  // Check if episode is accessible
+  const accessible = episode.isFree || isOwned || 
+    (unlockedByPass && !episode.isPatronOnly) || 
+    (hasPatronPass && episode.isPatronOnly);
 
   return (
     <motion.div
@@ -395,6 +540,46 @@ function EpisodeRow({
           }}>
             Owned
           </span>
+        ) : unlockedByPass && !episode.isPatronOnly ? (
+          <span style={{
+            background: 'rgba(16,185,129,0.1)',
+            color: '#10b981',
+            fontSize: 10,
+            fontWeight: 600,
+            padding: '4px 10px',
+            borderRadius: 999,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+          }}>
+            Unlocked by Pass
+          </span>
+        ) : hasPatronPass && episode.isPatronOnly ? (
+          <span style={{
+            background: 'rgba(251,191,36,0.1)',
+            color: '#f59e0b',
+            fontSize: 10,
+            fontWeight: 600,
+            padding: '4px 10px',
+            borderRadius: 999,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+          }}>
+            Patron Bonus
+          </span>
+        ) : episode.isPatronOnly ? (
+          <span style={{
+            background: 'var(--surface)',
+            color: 'var(--text-muted)',
+            fontSize: 10,
+            fontWeight: 600,
+            padding: '4px 10px',
+            borderRadius: 999,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            opacity: 0.5,
+          }}>
+            Patron Only
+          </span>
         ) : episode.isFree ? (
           <span style={{
             background: 'rgba(16,185,129,0.1)',
@@ -430,9 +615,10 @@ function EpisodeRow({
 export default function SeriesPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { ownedEpisodes } = useCoins();
+  const { ownedEpisodes, ownedPasses, buyPass } = useCoins();
   const [unlocking, setUnlocking] = useState<Episode | null>(null);
   const [justUnlocked, setJustUnlocked] = useState<Set<string>>(new Set());
+  const [purchasingPass, setPurchasingPass] = useState<string | null>(null);
 
   const series = ALL_SERIES.find(s => s.id === id);
 
@@ -472,6 +658,26 @@ export default function SeriesPage() {
       }
     }
     setUnlocking(null);
+  };
+
+  const handleBuyPass = async (tier: 'reader' | 'patron') => {
+    if (!series || !id) return;
+    
+    setPurchasingPass(tier);
+    try {
+      const result = await buyPass(id, tier);
+      if (result.success && result.txHash) {
+        // Show success state - could add a success modal here
+        console.log('Pass purchased successfully!', result.txHash);
+      } else {
+        // Show error state
+        console.error('Pass purchase failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Pass purchase error:', error);
+    } finally {
+      setPurchasingPass(null);
+    }
   };
 
   return (
@@ -599,6 +805,51 @@ export default function SeriesPage() {
               }}>{s.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Series Passes */}
+        <div style={{ marginBottom: 32 }}>
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 600,
+            fontSize: 16,
+            color: 'var(--text)',
+            marginBottom: 4,
+          }}>
+            Series Passes
+          </h2>
+          <p style={{
+            fontSize: 13,
+            color: 'var(--text-muted)',
+            marginBottom: 16,
+          }}>
+            Tradeable NFTs that unlock episodes · Creator royalties on resale
+          </p>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 16,
+          }}>
+            <PassCard
+              tier="reader"
+              pass={series.passes.reader}
+              seriesId={series.id}
+              seriesGradient={series.coverGradient}
+              onBuy={() => handleBuyPass('reader')}
+              isOwned={ownedPasses.has(series.id) && ownedPasses.get(series.id)?.tier === 'reader'}
+              isPurchasing={purchasingPass === 'reader'}
+            />
+            <PassCard
+              tier="patron"
+              pass={series.passes.patron}
+              seriesId={series.id}
+              seriesGradient={series.coverGradient}
+              onBuy={() => handleBuyPass('patron')}
+              isOwned={ownedPasses.has(series.id) && ownedPasses.get(series.id)?.tier === 'patron'}
+              isPurchasing={purchasingPass === 'patron'}
+            />
+          </div>
         </div>
 
         {/* Episodes list */}
