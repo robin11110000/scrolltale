@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { ThirdwebProvider } from "thirdweb/react";
 import { CoinProvider } from './context/CoinContext';
 import { WalletProvider } from './context/WalletContext';
 import BottomNav from './components/BottomNav';
@@ -29,12 +30,14 @@ function AppShell() {
 
 export default function App() {
   return (
-    <WalletProvider>
-      <CoinProvider>
-        <BrowserRouter>
-          <AppShell />
-        </BrowserRouter>
-      </CoinProvider>
-    </WalletProvider>
+    <ThirdwebProvider>
+      <WalletProvider>
+        <CoinProvider>
+          <BrowserRouter>
+            <AppShell />
+          </BrowserRouter>
+        </CoinProvider>
+      </WalletProvider>
+    </ThirdwebProvider>
   );
 }
