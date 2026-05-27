@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCoins } from '../context/CoinContext';
+import { useWallet } from '../context/WalletContext';
 import { ALL_SERIES, type Episode } from '../data/series';
 
-/* ── Animated coin counter ────────────────────────────────────────────────── */
 function AnimatedCoinCount({ value }: { value: number }) {
   const display = useRef(value);
   const [, forceRender] = useState(0);
@@ -28,7 +28,6 @@ function AnimatedCoinCount({ value }: { value: number }) {
   return <>{display.current.toLocaleString()}</>;
 }
 
-/* ── Unlock modal ─────────────────────────────────────────────────────────── */
 function UnlockModal({
   episode,
   seriesId,
@@ -39,15 +38,30 @@ function UnlockModal({
   onClose: () => void;
 }) {
   const { balance, spendCoins } = useCoins();
+  const { isConnected, address, connecting, connectWallet } = useWallet();
   const canAfford = balance >= episode.coinCost;
-  const [phase, setPhase] = useState<'idle' | 'unlocking' | 'done' | 'broke'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'connecting' | 'unlocking' | 'done' | 'broke'>('idle');
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  const handleConnectWallet = async () => {
+    setPhase('connecting');
+    try {
+      await connectWallet();
+      setPhase('idle');
+    } catch (error) {
+      setPhase('idle');
+    }
+  };
+
   const handleUnlock = () => {
+    if (!isConnected) {
+      handleConnectWallet();
+      return;
+    }
     if (!canAfford) { setPhase('broke'); return; }
     setPhase('unlocking');
     const ok = spendCoins(episode.coinCost, `${seriesId}:${episode.id}`);
@@ -68,95 +82,125 @@ function UnlockModal({
         position: 'fixed',
         inset: 0,
         zIndex: 200,
-        background: 'rgba(0,0,0,0.88)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
-        alignItems: 'flex-end',
+        alignItems: 'center',
         justifyContent: 'center',
-        paddingBottom: 88,
+        padding: 24,
       }}
     >
       <motion.div
-        initial={{ y: 90, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 90, opacity: 0 }}
+        initial={{ y: 30, opacity: 0, scale: 0.97 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 30, opacity: 0, scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 320, damping: 30 }}
         style={{
-          background: '#141414',
-          border: '1px solid rgba(255,20,147,0.3)',
-          borderRadius: 24,
-          padding: '28px 24px 24px',
-          width: 'calc(100% - 32px)',
-          maxWidth: 400,
-          boxShadow: '0 0 60px rgba(255,20,147,0.18)',
+          background: 'var(--surface-raised)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-xl)',
+          padding: 32,
+          width: '100%',
+          maxWidth: 420,
+          boxShadow: '0 0 80px rgba(124,58,237,0.08)',
         }}
       >
         {phase === 'done' ? (
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            style={{ textAlign: 'center', padding: '10px 0' }}
+            style={{ textAlign: 'center', padding: '16px 0' }}
           >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-              style={{ fontSize: 52, marginBottom: 14 }}
-            >
-              🎉
-            </motion.div>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
             <p style={{
-              fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 20,
-              color: '#FF1493', marginBottom: 6,
-            }}>episode unlocked!</p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#555' }}>
-              it's yours forever ✨
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20,
+              color: 'var(--accent-light)', marginBottom: 6,
+            }}>Episode unlocked!</p>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+              It's yours forever.
             </p>
           </motion.div>
         ) : (
           <>
             <p style={{
-              fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18,
-              color: '#fff', marginBottom: 4,
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18,
+              color: 'var(--text)', marginBottom: 4,
             }}>
-              unlock episode {episode.number}
+              Unlock Episode {episode.number}
             </p>
             <p style={{
-              fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#555',
-              marginBottom: 20,
+              fontSize: 13, color: 'var(--text-muted)',
+              marginBottom: isConnected ? 16 : 24,
             }}>
               {episode.title}
             </p>
 
-            {/* Cost / Balance row */}
+            {isConnected && address && (
+              <div style={{
+                background: 'var(--surface)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '10px 16px',
+                marginBottom: 20,
+                border: '1px solid var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: '#10b981',
+                  boxShadow: '0 0 8px rgba(16,185,129,0.4)',
+                }} />
+                <span style={{
+                  fontSize: 11,
+                  color: 'var(--text-muted)',
+                  marginRight: 8,
+                }}>
+                  Connected:
+                </span>
+                <code style={{
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: 'var(--text)',
+                  background: 'rgba(124,58,237,0.1)',
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                }}>
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </code>
+              </div>
+            )}
+
             <div style={{
-              background: '#0d0d0d',
-              borderRadius: 16,
+              background: 'var(--surface)',
+              borderRadius: 'var(--radius-md)',
               padding: '16px 20px',
-              marginBottom: 16,
+              marginBottom: 20,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              border: '1px solid var(--border)',
             }}>
               <div>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#444', marginBottom: 4 }}>
-                  episode cost
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Episode cost
                 </p>
                 <p style={{
-                  fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 22,
-                  color: '#FF1493', fontVariantNumeric: 'tabular-nums',
+                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
+                  color: 'var(--accent-light)', fontVariantNumeric: 'tabular-nums',
                 }}>
                   🪙 {episode.coinCost}
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#444', marginBottom: 4 }}>
-                  your balance
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Your balance
                 </p>
                 <p style={{
-                  fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 22,
-                  color: canAfford ? '#fff' : '#cc3333',
+                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
+                  color: canAfford ? 'var(--text)' : '#cc3333',
                   fontVariantNumeric: 'tabular-nums',
                 }}>
                   🪙 <AnimatedCoinCount value={balance} />
@@ -169,40 +213,42 @@ function UnlockModal({
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 style={{
-                  fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#cc3333',
+                  fontSize: 13, color: '#cc3333',
                   textAlign: 'center', marginBottom: 12,
                 }}
               >
-                not enough coins — head to Profile to top up
+                Not enough coins — head to Profile to top up.
               </motion.p>
             )}
 
             <motion.button
               onClick={handleUnlock}
-              disabled={phase === 'unlocking'}
-              whileHover={canAfford ? { boxShadow: '0 0 36px rgba(255,20,147,0.75)' } : {}}
+              disabled={phase === 'unlocking' || phase === 'connecting'}
+              whileHover={(!isConnected || canAfford) ? { boxShadow: '0 0 30px rgba(124,58,237,0.5)' } : {}}
               whileTap={{ scale: 0.97 }}
               style={{
                 width: '100%',
-                padding: '16px',
-                background: canAfford ? '#FF1493' : '#1a1a1a',
-                border: 'none',
-                borderRadius: 16,
-                fontFamily: 'Sora, sans-serif',
+                padding: '14px',
+                background: (!isConnected || canAfford) ? 'var(--accent)' : 'var(--surface)',
+                border: (!isConnected || canAfford) ? 'none' : '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 700,
-                fontSize: 15,
-                color: canAfford ? '#fff' : '#444',
-                cursor: canAfford ? 'pointer' : 'not-allowed',
-                boxShadow: canAfford ? '0 0 20px rgba(255,20,147,0.4)' : 'none',
-                letterSpacing: '0.04em',
+                fontSize: 14,
+                color: (!isConnected || canAfford) ? '#fff' : 'var(--text-muted)',
+                cursor: (!isConnected || canAfford) ? 'pointer' : 'not-allowed',
                 transition: 'background 0.2s',
               }}
             >
-              {phase === 'unlocking'
-                ? 'unlocking...'
+              {phase === 'connecting'
+                ? 'Connecting Wallet...'
+                : phase === 'unlocking'
+                ? 'Unlocking...'
+                : !isConnected
+                ? '🔗 Connect Wallet to Unlock'
                 : canAfford
-                ? `unlock for 🪙 ${episode.coinCost}`
-                : 'not enough coins'}
+                ? `Unlock for 🪙 ${episode.coinCost}`
+                : 'Not enough coins'}
             </motion.button>
 
             <button
@@ -212,14 +258,13 @@ function UnlockModal({
                 padding: '12px',
                 background: 'transparent',
                 border: 'none',
-                color: '#444',
-                fontFamily: 'Inter, sans-serif',
+                color: 'var(--text-muted)',
                 fontSize: 14,
                 cursor: 'pointer',
-                marginTop: 6,
+                marginTop: 4,
               }}
             >
-              cancel
+              Cancel
             </button>
           </>
         )}
@@ -228,7 +273,6 @@ function UnlockModal({
   );
 }
 
-/* ── Episode row ──────────────────────────────────────────────────────────── */
 function EpisodeRow({
   episode,
   seriesId,
@@ -248,7 +292,7 @@ function EpisodeRow({
   return (
     <motion.div
       layout
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.99 }}
       onClick={() => {
         if (accessible) navigate(`/read/${seriesId}/${episode.id}`);
         else onLocked();
@@ -256,51 +300,51 @@ function EpisodeRow({
       style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '14px 0',
-        borderBottom: '1px solid #111',
+        padding: '16px 20px',
+        borderBottom: '1px solid var(--border)',
         cursor: 'pointer',
         gap: 14,
+        transition: 'background 0.15s',
       }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
     >
-      {/* Number chip */}
       <div style={{
         width: 36,
         height: 36,
-        borderRadius: 10,
-        background: accessible ? 'rgba(255,20,147,0.1)' : '#0d0d0d',
-        border: `1px solid ${accessible ? 'rgba(255,20,147,0.3)' : '#1a1a1a'}`,
+        borderRadius: 'var(--radius-sm)',
+        background: accessible ? 'var(--accent-subtle)' : 'var(--surface)',
+        border: `1px solid ${accessible ? 'rgba(124,58,237,0.3)' : 'var(--border)'}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        fontFamily: 'Sora, sans-serif',
+        fontFamily: 'var(--font-display)',
         fontWeight: 700,
         fontSize: 13,
-        color: accessible ? '#FF1493' : '#333',
+        color: accessible ? 'var(--accent-light)' : 'var(--text-muted)',
       }}>
         {episode.number}
       </div>
 
-      {/* Title */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{
-          fontFamily: 'Sora, sans-serif',
+          fontFamily: 'var(--font-display)',
           fontWeight: 500,
-          fontSize: 15,
-          color: accessible ? '#fff' : '#444',
-          marginBottom: 3,
+          fontSize: 14,
+          color: accessible ? 'var(--text)' : 'var(--text-muted)',
+          marginBottom: 2,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}>
           {episode.title}
         </p>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#333' }}>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           Episode {episode.number}
         </p>
       </div>
 
-      {/* Badge */}
       <div style={{ flexShrink: 0 }}>
         {isJustUnlocked ? (
           <motion.span
@@ -308,41 +352,37 @@ function EpisodeRow({
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 350, damping: 18 }}
             style={{
-              background: '#FF1493',
+              background: 'var(--accent)',
               color: '#fff',
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 700,
               fontSize: 10,
+              fontWeight: 700,
               padding: '4px 10px',
               borderRadius: 999,
               letterSpacing: '0.05em',
-              textTransform: 'uppercase' as const,
-              boxShadow: '0 0 12px rgba(255,20,147,0.55)',
+              textTransform: 'uppercase',
             }}
           >
             Owned
           </motion.span>
         ) : isOwned ? (
           <span style={{
-            background: 'rgba(255,20,147,0.14)',
-            color: '#FF1493',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: 600,
+            background: 'var(--accent-subtle)',
+            color: 'var(--accent-light)',
             fontSize: 10,
+            fontWeight: 600,
             padding: '4px 10px',
             borderRadius: 999,
             letterSpacing: '0.05em',
-            textTransform: 'uppercase' as const,
+            textTransform: 'uppercase',
           }}>
             Owned
           </span>
         ) : episode.isFree ? (
           <span style={{
-            background: 'rgba(0,200,80,0.12)',
-            color: '#00cc55',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: 600,
+            background: 'rgba(16,185,129,0.1)',
+            color: '#10b981',
             fontSize: 10,
+            fontWeight: 600,
             padding: '4px 10px',
             borderRadius: 999,
             letterSpacing: '0.05em',
@@ -351,13 +391,12 @@ function EpisodeRow({
           </span>
         ) : (
           <span style={{
-            background: '#0d0d0d',
-            color: '#555',
-            fontFamily: 'Inter, sans-serif',
+            background: 'var(--surface)',
+            color: 'var(--text-muted)',
             fontSize: 12,
             padding: '4px 10px',
             borderRadius: 999,
-            border: '1px solid #222',
+            border: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
             gap: 4,
@@ -370,7 +409,6 @@ function EpisodeRow({
   );
 }
 
-/* ── Series page ──────────────────────────────────────────────────────────── */
 export default function SeriesPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -382,20 +420,21 @@ export default function SeriesPage() {
 
   if (!series) {
     return (
-      <div style={{ textAlign: 'center', padding: 60, color: '#444' }}>
-        <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, color: '#555', marginBottom: 20 }}>
-          series not found
-        </p>
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            background: 'transparent', border: 'none',
-            color: '#FF1493', fontFamily: 'Inter, sans-serif',
-            fontSize: 14, cursor: 'pointer',
-          }}
-        >
-          ← back to discover
-        </button>
+      <div className="page">
+        <div className="container" style={{ textAlign: 'center', paddingTop: 80 }}>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text-muted)', marginBottom: 20 }}>
+            Series not found
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              background: 'transparent', border: 'none',
+              color: 'var(--accent-light)', fontSize: 14, cursor: 'pointer',
+            }}
+          >
+            ← Back to discover
+          </button>
+        </div>
       </div>
     );
   }
@@ -418,26 +457,29 @@ export default function SeriesPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', paddingBottom: 90 }}>
+    <div className="page">
       {/* Banner */}
       <div style={{
-        height: 248,
+        height: 320,
         background: series.bannerGradient,
         position: 'relative',
         display: 'flex',
         alignItems: 'flex-end',
-        padding: '20px',
       }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.9) 100%)',
+        }} />
         <button
           onClick={() => navigate(-1)}
           style={{
             position: 'absolute',
-            top: 16,
-            left: 16,
+            top: 20,
+            left: 24,
             background: 'rgba(0,0,0,0.6)',
             backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 999,
             width: 40,
             height: 40,
@@ -446,125 +488,139 @@ export default function SeriesPage() {
             justifyContent: 'center',
             cursor: 'pointer',
             color: '#fff',
-            fontSize: 20,
+            fontSize: 18,
+            zIndex: 10,
           }}
           aria-label="Go back"
         >
           ←
         </button>
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div className="container" style={{ position: 'relative', zIndex: 1, paddingBottom: 32 }}>
           <span style={{
-            background: 'rgba(255,20,147,0.2)',
-            border: '1px solid rgba(255,20,147,0.45)',
-            color: '#FF1493',
-            fontFamily: 'Inter, sans-serif',
+            background: 'rgba(124,58,237,0.15)',
+            border: '1px solid rgba(124,58,237,0.35)',
+            color: 'var(--accent-light)',
             fontSize: 11,
             fontWeight: 600,
+            fontFamily: 'var(--font-sans)',
             padding: '3px 10px',
             borderRadius: 999,
             letterSpacing: '0.07em',
-            textTransform: 'uppercase' as const,
+            textTransform: 'uppercase',
             display: 'inline-block',
-            marginBottom: 10,
+            marginBottom: 12,
           }}>
             {series.genre}
           </span>
           <h1 style={{
-            fontFamily: 'Sora, sans-serif',
+            fontFamily: 'var(--font-display)',
             fontWeight: 700,
-            fontSize: 26,
-            color: '#fff',
-            lineHeight: 1.2,
+            fontSize: 32,
+            color: 'var(--text)',
+            lineHeight: 1.15,
             letterSpacing: '-0.02em',
-            textShadow: '0 2px 24px rgba(0,0,0,0.9)',
-            marginBottom: 4,
+            marginBottom: 6,
           }}>
             {series.title}
           </h1>
           <p style={{
-            fontFamily: 'Inter, sans-serif',
-            fontSize: 13,
-            color: 'rgba(255,255,255,0.55)',
+            fontSize: 14,
+            color: 'rgba(255,255,255,0.5)',
           }}>
             by {series.author}
           </p>
         </div>
       </div>
 
-      <div style={{ padding: '20px' }}>
+      <div className="container" style={{ paddingTop: 24, paddingBottom: 24 }}>
         {/* Description */}
         <p style={{
-          fontFamily: 'Inter, sans-serif',
           fontSize: 14,
-          color: '#888',
+          color: 'var(--text-secondary)',
           lineHeight: 1.75,
-          marginBottom: 20,
+          marginBottom: 24,
+          maxWidth: 640,
         }}>
           {series.description}
         </p>
 
-        {/* Stats chips */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+        {/* Stats */}
+        <div style={{
+          display: 'flex',
+          gap: 12,
+          marginBottom: 32,
+          flexWrap: 'wrap',
+        }}>
           {[
             { label: 'Episodes', value: String(series.episodes.length) },
             { label: 'Free', value: String(series.episodes.filter(e => e.isFree).length) },
-            { label: 'Per ep', value: '🪙 10' },
+            { label: 'Cost per episode', value: '🪙 10' },
           ].map(s => (
             <div
               key={s.label}
               style={{
-                flex: 1,
-                background: '#0d0d0d',
-                border: '1px solid #1a1a1a',
-                borderRadius: 14,
-                padding: '12px 8px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '14px 20px',
                 textAlign: 'center',
               }}
             >
               <p style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 700,
-                fontSize: 16,
-                color: '#FF1493',
+                fontSize: 18,
+                color: 'var(--accent-light)',
                 marginBottom: 4,
               }}>{s.value}</p>
               <p style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: 10,
-                color: '#444',
+                fontSize: 11,
+                color: 'var(--text-muted)',
                 letterSpacing: '0.04em',
-                textTransform: 'uppercase' as const,
+                textTransform: 'uppercase',
               }}>{s.label}</p>
             </div>
           ))}
         </div>
 
-        {/* Episode list header */}
+        {/* Episodes list */}
         <h2 style={{
-          fontFamily: 'Sora, sans-serif',
+          fontFamily: 'var(--font-display)',
           fontWeight: 600,
-          fontSize: 13,
-          color: '#FF1493',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase' as const,
-          marginBottom: 6,
+          fontSize: 16,
+          color: 'var(--text)',
+          marginBottom: 4,
         }}>
           Episodes
         </h2>
+        <p style={{
+          fontSize: 13,
+          color: 'var(--text-muted)',
+          marginBottom: 16,
+        }}>
+          {series.episodes.filter(e => e.isFree).length} free · {series.episodes.filter(e => !e.isFree).length} paid
+        </p>
 
-        {series.episodes.map(ep => {
-          const key = `${series.id}:${ep.id}`;
-          return (
-            <EpisodeRow
-              key={ep.id}
-              episode={ep}
-              seriesId={series.id}
-              isOwned={ownedEpisodes.has(key)}
-              isJustUnlocked={justUnlocked.has(key)}
-              onLocked={() => setUnlocking(ep)}
-            />
-          );
-        })}
+        <div style={{
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+          background: 'var(--surface)',
+        }}>
+          {series.episodes.map(ep => {
+            const key = `${series.id}:${ep.id}`;
+            return (
+              <EpisodeRow
+                key={ep.id}
+                episode={ep}
+                seriesId={series.id}
+                isOwned={ownedEpisodes.has(key)}
+                isJustUnlocked={justUnlocked.has(key)}
+                onLocked={() => setUnlocking(ep)}
+              />
+            );
+          })}
+        </div>
       </div>
 
       <AnimatePresence>

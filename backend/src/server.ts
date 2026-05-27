@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import express from 'express';
+import cors from 'cors';
 import { Pool } from 'pg';
+import authRoutes from './routes/auth.js';
 
 // ── Global safety-net — keeps the process alive under any circumstance ───────
 process.on('uncaughtException', (err) => {
@@ -12,6 +14,12 @@ process.on('unhandledRejection', (reason) => {
 });
 
 const app = express();
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://scrolltale.com'] 
+    : ['http://localhost:3000', 'http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
 
 // ── Database ─────────────────────────────────────────────────────────────────
@@ -53,6 +61,9 @@ app.get('/health', (_req, res) => {
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'scrolltale-api' });
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // Root route handled by the SPA fallback below — no JSON response here.
 

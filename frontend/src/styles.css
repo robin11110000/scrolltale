@@ -1,13 +1,35 @@
-/* ── Reset & base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-raised: #111111;
+  --border: #1a1a1a;
+  --border-light: #222222;
+  --text: #ffffff;
+  --text-secondary: #888888;
+  --text-muted: #444444;
+  --accent: #7c3aed;
+  --accent-light: #a78bfa;
+  --accent-subtle: rgba(124, 58, 237, 0.1);
+  --accent-glow: rgba(124, 58, 237, 0.3);
+  --gradient: linear-gradient(135deg, #4c1d95, #7c3aed);
+  --gradient-subtle: linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, transparent 100%);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+}
+
 html {
   scroll-behavior: smooth;
-  background: #000;
+  background: var(--bg);
 }
 
 html, body, #root {
@@ -15,9 +37,9 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  background: #000;
-  color: #fff;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -25,52 +47,44 @@ body {
   overscroll-behavior: none;
 }
 
-/* ── Phone frame — center 430px shell on desktop ─────────────────────────── */
-.phone-frame {
-  min-height: 100vh;
-  background: #000;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+::selection {
+  background: rgba(124, 58, 237, 0.3);
+  color: #fff;
 }
 
-@media (min-width: 431px) {
-  .phone-frame {
-    background: #080808;
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: var(--accent-light);
+  text-decoration: none;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
   }
 }
 
-.phone-screen {
-  width: 100%;
-  max-width: 430px;
-  background: #000;
+.page {
   min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
+  padding-bottom: 80px;
 }
 
-/* ── Hide scrollbar in genre strip ───────────────────────────────────────── */
-.phone-screen *::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── Keyframes ────────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; }
-  to   { opacity: 1; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(24px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes pinkPulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(255,20,147,0.35); }
-  50%       { box-shadow: 0 0 28px rgba(255,20,147,0.7); }
-}
-
-/* ── Utility ──────────────────────────────────────────────────────────────── */
-button {
-  -webkit-tap-highlight-color: transparent;
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }

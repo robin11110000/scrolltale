@@ -52,21 +52,21 @@ const DIALOGUE_BANKS: { speaker: string; text: string }[][] = [
 
 function makePanels(seriesId: string): Panel[] {
   const series = ALL_SERIES.find(s => s.id === seriesId);
-  const accent = series?.accentColor ?? '#FF1493';
+  const accent = series?.accentColor ?? '#7c3aed';
   const bankIndex = ALL_SERIES.findIndex(s => s.id === seriesId) % DIALOGUE_BANKS.length;
   const bank = DIALOGUE_BANKS[bankIndex];
 
   const bgPairs = [
-    [`#030003`, `#120015`],
-    [`#000808`, `#001a1a`],
-    [`#050000`, `#160000`],
-    [`#000503`, `#001510`],
-    [`#030300`, `#0d0d00`],
-    [`#000003`, `#00000d`],
-    [`#030003`, `#0d0011`],
-    [`#000a0a`, `#002020`],
-    [`#050000`, `${accent}18`],
-    [`#000005`, `${accent}12`],
+    ['#030003', '#120015'],
+    ['#000808', '#001a1a'],
+    ['#050000', '#160000'],
+    ['#000503', '#001510'],
+    ['#030300', '#0d0d00'],
+    ['#000003', '#00000d'],
+    ['#030003', '#0d0011'],
+    ['#000a0a', '#002020'],
+    ['#050000', `${accent}18`],
+    ['#000005', `${accent}12`],
   ];
 
   return bank.map((d, i) => ({
@@ -106,11 +106,10 @@ export default function ReaderPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // scroll to top on mount
   useEffect(() => { window.scrollTo(0, 0); }, [episodeId]);
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       {/* Progress bar */}
       <div style={{
         position: 'fixed',
@@ -118,19 +117,18 @@ export default function ReaderPage() {
         left: 0,
         right: 0,
         height: 3,
-        background: '#0d0d0d',
+        background: 'var(--surface)',
         zIndex: 100,
       }}>
         <div style={{
           height: '100%',
           width: `${progress * 100}%`,
-          background: 'linear-gradient(90deg, #FF1493 0%, #ff6ec7 100%)',
-          boxShadow: '0 0 8px rgba(255,20,147,0.7)',
+          background: 'var(--gradient)',
           transition: 'width 0.12s linear',
         }} />
       </div>
 
-      {/* Fixed header */}
+      {/* Header */}
       <div style={{
         position: 'fixed',
         top: 3,
@@ -140,16 +138,14 @@ export default function ReaderPage() {
         display: 'flex',
         justifyContent: 'center',
       }}>
-        <div style={{
-          width: '100%',
-          maxWidth: 430,
+        <div className="container" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '10px 16px',
-          background: 'rgba(0,0,0,0.88)',
+          paddingTop: 10,
+          paddingBottom: 10,
+          background: 'rgba(0,0,0,0.85)',
           backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(255,255,255,0.04)',
         }}>
           <button
@@ -173,18 +169,17 @@ export default function ReaderPage() {
           </button>
           <div style={{ textAlign: 'center' }}>
             <p style={{
-              fontFamily: 'Sora, sans-serif',
+              fontFamily: 'var(--font-display)',
               fontWeight: 600,
               fontSize: 14,
-              color: '#fff',
+              color: 'var(--text)',
               lineHeight: 1.2,
             }}>
               {episode?.title ?? 'Reading...'}
             </p>
             <p style={{
-              fontFamily: 'Inter, sans-serif',
               fontSize: 11,
-              color: '#444',
+              color: 'var(--text-muted)',
               marginTop: 2,
             }}>
               {series?.title} · EP {episode?.number}
@@ -195,20 +190,20 @@ export default function ReaderPage() {
       </div>
 
       {/* Panels */}
-      <div style={{ paddingTop: 56 }}>
+      <div style={{ paddingTop: 56, maxWidth: 680, margin: '0 auto', paddingLeft: 16, paddingRight: 16 }}>
         {panels.map((panel, i) => (
           <div
             key={panel.id}
             style={{
-              margin: '8px 12px',
-              borderRadius: 20,
+              margin: '8px 0',
+              borderRadius: 'var(--radius-xl)',
               overflow: 'hidden',
               background: panel.bg,
-              minHeight: 300,
+              minHeight: 320,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-end',
-              padding: '20px',
+              padding: '24px',
               position: 'relative',
               border: '1px solid rgba(255,255,255,0.03)',
             }}
@@ -248,12 +243,10 @@ export default function ReaderPage() {
               pointerEvents: 'none',
             }} />
 
-            {/* Panel counter */}
             <div style={{
               position: 'absolute',
               top: 14,
               right: 16,
-              fontFamily: 'Inter, sans-serif',
               fontSize: 11,
               color: 'rgba(255,255,255,0.15)',
               letterSpacing: '0.06em',
@@ -261,28 +254,24 @@ export default function ReaderPage() {
               {String(i + 1).padStart(2, '0')} / {panels.length}
             </div>
 
-            {/* Dialogue box */}
             <div style={{
-              background: 'rgba(0,0,0,0.72)',
+              background: 'rgba(0,0,0,0.7)',
               backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
-              borderRadius: 14,
-              padding: '14px 16px',
+              borderRadius: 'var(--radius-md)',
+              padding: '16px 20px',
             }}>
               <p style={{
-                fontFamily: 'Inter, sans-serif',
                 fontSize: 10,
                 color: panel.shapeColor,
                 letterSpacing: '0.08em',
-                textTransform: 'uppercase' as const,
+                textTransform: 'uppercase',
                 marginBottom: 6,
                 fontWeight: 600,
               }}>
                 {panel.speaker}
               </p>
               <p style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: 14,
+                fontSize: 15,
                 color: '#e0e0e0',
                 lineHeight: 1.65,
                 fontStyle: panel.speaker === 'Narrator' ? 'italic' : 'normal',
@@ -297,38 +286,37 @@ export default function ReaderPage() {
         <AnimatePresence>
           {showNext && (
             <motion.div
-              initial={{ y: 60, opacity: 0 }}
+              initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 60, opacity: 0 }}
+              exit={{ y: 40, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 28 }}
               style={{
-                margin: '16px 12px 110px',
-                background: '#0d0d0d',
-                border: '1px solid rgba(255,20,147,0.35)',
-                borderRadius: 24,
-                padding: '28px 24px',
+                margin: '24px 0 100px',
+                background: 'var(--surface-raised)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '32px 24px',
                 textAlign: 'center',
-                boxShadow: '0 0 40px rgba(255,20,147,0.12)',
               }}
             >
               <p style={{
-                fontFamily: 'Sora, sans-serif',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 12,
-                color: '#FF1493',
+                color: 'var(--accent-light)',
                 letterSpacing: '0.12em',
-                textTransform: 'uppercase' as const,
+                textTransform: 'uppercase',
                 marginBottom: 10,
               }}>
-                you finished this episode
+                You finished this episode
               </p>
               {nextEp ? (
                 <>
                   <p style={{
-                    fontFamily: 'Sora, sans-serif',
+                    fontFamily: 'var(--font-display)',
                     fontWeight: 700,
                     fontSize: 18,
-                    color: '#fff',
+                    color: 'var(--text)',
                     marginBottom: 20,
                     lineHeight: 1.3,
                   }}>
@@ -336,21 +324,19 @@ export default function ReaderPage() {
                   </p>
                   <motion.button
                     onClick={() => navigate(`/read/${seriesId}/${nextEp.id}`)}
-                    whileHover={{ boxShadow: '0 0 32px rgba(255,20,147,0.65)' }}
+                    whileHover={{ boxShadow: '0 0 30px rgba(124,58,237,0.5)' }}
                     whileTap={{ scale: 0.97 }}
                     style={{
                       width: '100%',
-                      padding: '15px',
-                      background: '#FF1493',
+                      padding: '14px',
+                      background: 'var(--accent)',
                       border: 'none',
-                      borderRadius: 16,
-                      fontFamily: 'Sora, sans-serif',
+                      borderRadius: 'var(--radius-md)',
+                      fontFamily: 'var(--font-display)',
                       fontWeight: 700,
                       fontSize: 14,
                       color: '#fff',
                       cursor: 'pointer',
-                      boxShadow: '0 0 22px rgba(255,20,147,0.4)',
-                      letterSpacing: '0.04em',
                       marginBottom: 12,
                     }}
                   >
@@ -359,29 +345,27 @@ export default function ReaderPage() {
                 </>
               ) : (
                 <p style={{
-                  fontFamily: 'Inter, sans-serif',
                   fontSize: 15,
-                  color: '#555',
+                  color: 'var(--text-muted)',
                   marginBottom: 20,
                   lineHeight: 1.6,
                 }}>
-                  you're all caught up! more episodes dropping soon. 🌙
+                  You're all caught up! More episodes dropping soon.
                 </p>
               )}
               <button
                 onClick={() => navigate(`/series/${seriesId}`)}
                 style={{
                   background: 'transparent',
-                  border: '1px solid #222',
-                  color: '#555',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
                   padding: '10px 22px',
                   borderRadius: 999,
-                  fontFamily: 'Inter, sans-serif',
                   fontSize: 13,
                   cursor: 'pointer',
                 }}
               >
-                back to series
+                Back to series
               </button>
             </motion.div>
           )}

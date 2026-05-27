@@ -38,60 +38,55 @@ function BarChart() {
     <div
       ref={ref}
       style={{
-        background: '#0d0d0d',
-        border: '1px solid #1a1a1a',
-        borderRadius: 20,
-        padding: '20px',
-        marginBottom: 20,
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: 24,
+        marginBottom: 24,
       }}
     >
-      {/* Header row */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 18,
+        marginBottom: 20,
         gap: 8,
         flexWrap: 'wrap',
       }}>
         <p style={{
-          fontFamily: 'Sora, sans-serif',
+          fontFamily: 'var(--font-display)',
           fontWeight: 600,
-          fontSize: 13,
-          color: '#FF1493',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase' as const,
+          fontSize: 14,
+          color: 'var(--text)',
         }}>
           Per-Episode Revenue
         </p>
         {TOTAL > PAYOUT_THRESHOLD && (
           <motion.span
-            animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.04, 1] }}
+            animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
             style={{
-              background: 'rgba(255,20,147,0.14)',
-              border: '1px solid rgba(255,20,147,0.5)',
-              color: '#FF1493',
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 700,
+              background: 'rgba(124,58,237,0.12)',
+              border: '1px solid rgba(124,58,237,0.4)',
+              color: 'var(--accent-light)',
               fontSize: 10,
+              fontWeight: 700,
               padding: '4px 12px',
               borderRadius: 999,
               letterSpacing: '0.06em',
-              whiteSpace: 'nowrap' as const,
+              whiteSpace: 'nowrap',
             }}
           >
-            ● PAYOUT READY
+            ● Payout Ready
           </motion.span>
         )}
       </div>
 
-      {/* Bars */}
       <div style={{
         display: 'flex',
         alignItems: 'flex-end',
-        gap: 6,
-        height: 110,
+        gap: 8,
+        height: 120,
         position: 'relative',
       }}>
         {EPISODE_REVENUE.map((ep, i) => {
@@ -114,7 +109,6 @@ function BarChart() {
               onTouchStart={() => setTooltip(i)}
               onTouchEnd={() => setTimeout(() => setTooltip(null), 2200)}
             >
-              {/* Tooltip */}
               {tooltip === i && (
                 <motion.div
                   initial={{ opacity: 0, y: 4 }}
@@ -124,32 +118,28 @@ function BarChart() {
                     bottom: `${pct}%`,
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: '#FF1493',
+                    background: 'var(--accent)',
                     color: '#fff',
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 700,
                     fontSize: 10,
+                    fontWeight: 700,
                     padding: '4px 8px',
-                    borderRadius: 8,
-                    whiteSpace: 'nowrap' as const,
+                    borderRadius: 'var(--radius-sm)',
+                    whiteSpace: 'nowrap',
                     zIndex: 10,
                     marginBottom: 8,
-                    boxShadow: '0 0 12px rgba(255,20,147,0.5)',
                   }}
                 >
                   🪙 {ep.coins.toLocaleString()}
                 </motion.div>
               )}
-              {/* Bar */}
               <motion.div
                 initial={{ height: 0 }}
                 animate={inView ? { height: `${pct}%` } : { height: 0 }}
                 transition={{ duration: 0.55, delay: i * 0.07, ease: 'easeOut' }}
                 style={{
                   width: '100%',
-                  background: 'linear-gradient(180deg, #FF1493 0%, #cc0070 100%)',
-                  borderRadius: '6px 6px 3px 3px',
-                  boxShadow: '0 0 8px rgba(255,20,147,0.3)',
+                  background: 'var(--gradient)',
+                  borderRadius: '4px 4px 2px 2px',
                   minHeight: 4,
                 }}
               />
@@ -158,15 +148,13 @@ function BarChart() {
         })}
       </div>
 
-      {/* X labels */}
-      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         {EPISODE_REVENUE.map(ep => (
           <div key={ep.ep} style={{
             flex: 1,
             textAlign: 'center',
-            fontFamily: 'Inter, sans-serif',
             fontSize: 9,
-            color: '#333',
+            color: 'var(--text-muted)',
             letterSpacing: '0.04em',
           }}>
             {ep.ep}
@@ -179,34 +167,30 @@ function BarChart() {
 
 export default function CreatorPage() {
   return (
-    <div style={{ minHeight: '100vh', background: '#000', paddingBottom: 90 }}>
-      {/* Header */}
-      <div style={{
-        padding: '20px 20px 16px',
-        borderBottom: '1px solid #0d0d0d',
-      }}>
-        <p style={{
-          fontFamily: 'Sora, sans-serif',
-          fontWeight: 700,
-          fontSize: 22,
-          color: '#fff',
-          letterSpacing: '-0.02em',
-          marginBottom: 4,
-        }}>
-          Creator Studio ✍️
-        </p>
-        <p style={{
-          fontFamily: 'Inter, sans-serif',
-          fontSize: 14,
-          color: '#444',
-        }}>
-          your creative empire, at a glance
-        </p>
-      </div>
+    <div className="page">
+      <div className="container" style={{ paddingTop: 32 }}>
+        {/* Header */}
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 28,
+            color: 'var(--text)',
+            letterSpacing: '-0.02em',
+            marginBottom: 4,
+          }}>
+            Creator Studio
+          </h1>
+          <p style={{
+            fontSize: 14,
+            color: 'var(--text-secondary)',
+          }}>
+            Your creative empire, at a glance.
+          </p>
+        </div>
 
-      <div style={{ padding: '20px' }}>
         {/* Stats row */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
             { label: 'Total Earnings', value: `🪙 ${TOTAL.toLocaleString()}` },
             { label: 'Subscribers', value: '847' },
@@ -214,34 +198,32 @@ export default function CreatorPage() {
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
               style={{
-                flex: 1,
-                background: '#0d0d0d',
-                border: '1px solid #1a1a1a',
-                borderRadius: 16,
-                padding: '14px 8px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '16px 24px',
                 textAlign: 'center',
               }}
             >
               <p style={{
-                fontFamily: 'Sora, sans-serif',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 700,
-                fontSize: 14,
-                color: '#FF1493',
-                marginBottom: 5,
+                fontSize: 16,
+                color: 'var(--accent-light)',
+                marginBottom: 4,
                 lineHeight: 1.2,
               }}>
                 {stat.value}
               </p>
               <p style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: 10,
-                color: '#3a3a3a',
+                fontSize: 11,
+                color: 'var(--text-muted)',
                 letterSpacing: '0.04em',
-                textTransform: 'uppercase' as const,
+                textTransform: 'uppercase',
               }}>
                 {stat.label}
               </p>
@@ -249,92 +231,94 @@ export default function CreatorPage() {
           ))}
         </div>
 
-        {/* Bar chart */}
+        {/* Chart */}
         <BarChart />
 
         {/* My Series */}
         <h2 style={{
-          fontFamily: 'Sora, sans-serif',
+          fontFamily: 'var(--font-display)',
           fontWeight: 600,
-          fontSize: 13,
-          color: '#FF1493',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase' as const,
-          marginBottom: 12,
+          fontSize: 16,
+          color: 'var(--text)',
+          marginBottom: 16,
         }}>
           My Series
         </h2>
-        {CREATOR_SERIES.map((s, i) => (
-          <motion.div
-            key={s.title}
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.08 + 0.2 }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              padding: '14px 0',
-              borderBottom: '1px solid #0d0d0d',
-              gap: 14,
-            }}
-          >
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background: s.gradient,
-              flexShrink: 0,
-              border: '1px solid rgba(255,20,147,0.12)',
-            }} />
-            <div style={{ flex: 1 }}>
+        <div style={{
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+          background: 'var(--surface)',
+          marginBottom: 24,
+        }}>
+          {CREATOR_SERIES.map((s, i) => (
+            <motion.div
+              key={s.title}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.08 + 0.2 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '16px 20px',
+                borderBottom: i < CREATOR_SERIES.length - 1 ? '1px solid var(--border)' : 'none',
+                gap: 14,
+              }}
+            >
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 'var(--radius-sm)',
+                background: s.gradient,
+                flexShrink: 0,
+                border: '1px solid rgba(124,58,237,0.1)',
+              }} />
+              <div style={{ flex: 1 }}>
+                <p style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: 'var(--text)',
+                  marginBottom: 2,
+                }}>
+                  {s.title}
+                </p>
+                <p style={{
+                  fontSize: 12,
+                  color: 'var(--text-muted)',
+                }}>
+                  {s.episodes} episodes
+                </p>
+              </div>
               <p style={{
-                fontFamily: 'Sora, sans-serif',
-                fontWeight: 600,
+                fontFamily: 'var(--font-display)',
+                fontWeight: 700,
                 fontSize: 14,
-                color: '#fff',
-                marginBottom: 3,
+                color: 'var(--accent-light)',
+                fontVariantNumeric: 'tabular-nums',
               }}>
-                {s.title}
+                🪙 {s.earnings.toLocaleString()}
               </p>
-              <p style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: 12,
-                color: '#444',
-              }}>
-                {s.episodes} episodes
-              </p>
-            </div>
-            <p style={{
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 700,
-              fontSize: 14,
-              color: '#FF1493',
-              fontVariantNumeric: 'tabular-nums',
-            }}>
-              🪙 {s.earnings.toLocaleString()}
-            </p>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
+        </div>
 
         {/* Publish CTA */}
         <motion.button
-          whileHover={{ boxShadow: '0 0 32px rgba(255,20,147,0.55)' }}
+          whileHover={{ boxShadow: '0 0 30px rgba(124,58,237,0.4)' }}
           whileTap={{ scale: 0.97 }}
           style={{
             width: '100%',
-            padding: '16px',
-            background: '#FF1493',
+            padding: '14px',
+            background: 'var(--accent)',
             border: 'none',
-            borderRadius: 16,
-            fontFamily: 'Sora, sans-serif',
+            borderRadius: 'var(--radius-md)',
+            fontFamily: 'var(--font-display)',
             fontWeight: 700,
             fontSize: 14,
             color: '#fff',
             cursor: 'pointer',
-            boxShadow: '0 0 20px rgba(255,20,147,0.3)',
-            letterSpacing: '0.04em',
-            marginTop: 20,
-            marginBottom: 24,
+            marginBottom: 32,
           }}
         >
           + Publish New Episode
@@ -342,31 +326,28 @@ export default function CreatorPage() {
 
         {/* On-chain payouts */}
         <h2 style={{
-          fontFamily: 'Sora, sans-serif',
+          fontFamily: 'var(--font-display)',
           fontWeight: 600,
-          fontSize: 13,
-          color: '#FF1493',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase' as const,
-          marginBottom: 6,
+          fontSize: 16,
+          color: 'var(--text)',
+          marginBottom: 4,
         }}>
           On-Chain Payouts
         </h2>
         <p style={{
-          fontFamily: 'Inter, sans-serif',
           fontSize: 13,
-          color: '#444',
-          marginBottom: 14,
-          lineHeight: 1.6,
+          color: 'var(--text-muted)',
+          marginBottom: 16,
         }}>
           Transparent. Every coin tracked.
         </p>
 
         <div style={{
-          background: '#0d0d0d',
-          border: '1px solid #1a1a1a',
-          borderRadius: 16,
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
           overflow: 'hidden',
+          background: 'var(--surface)',
+          marginBottom: 24,
         }}>
           {MOCK_TX.map((tx, i) => (
             <motion.div
@@ -377,43 +358,41 @@ export default function CreatorPage() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: '12px 16px',
-                borderBottom: i < MOCK_TX.length - 1 ? '1px solid #111' : 'none',
-                gap: 10,
+                padding: '14px 20px',
+                borderBottom: i < MOCK_TX.length - 1 ? '1px solid var(--border)' : 'none',
+                gap: 12,
               }}
             >
               <span style={{
                 fontFamily: 'monospace',
                 fontSize: 11,
-                color: '#333',
+                color: 'var(--text-muted)',
                 flex: 1,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap' as const,
+                whiteSpace: 'nowrap',
               }}>
                 {tx.hash}
               </span>
               <span style={{
-                fontFamily: 'Inter, sans-serif',
                 fontSize: 11,
-                color: '#444',
+                color: 'var(--text-muted)',
                 flexShrink: 0,
               }}>
                 {tx.ep}
               </span>
               <span style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 700,
-                fontSize: 12,
-                color: '#FF1493',
+                fontSize: 13,
+                color: 'var(--accent-light)',
                 flexShrink: 0,
               }}>
                 {tx.amount} 🪙
               </span>
               <span style={{
-                fontFamily: 'Inter, sans-serif',
                 fontSize: 11,
-                color: '#2a2a2a',
+                color: 'var(--text-muted)',
                 flexShrink: 0,
               }}>
                 {tx.time}
