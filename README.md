@@ -1,6 +1,7 @@
 # Scrolltale
 
 > *stories that scroll with you. payouts that don't lie.*
+
 A decentralized webtoon platform where artists publish serialized comics with transparent on-chain payouts, and readers own the episodes they unlock. This repo contains the full-stack interactive demo — a functional-looking webtoon reader SPA that showcases the platform's core experience.
 
 ---
