@@ -39,7 +39,7 @@ function PassCard({
   isPurchasing,
 }: {
   tier: 'reader' | 'patron';
-  pass: PassTier;
+  pass: PassTier | null;
   seriesId: string;
   seriesGradient: string;
   onBuy: () => void;
@@ -48,6 +48,57 @@ function PassCard({
 }) {
   const { isConnected } = useWallet();
   const { hasAccess } = useCoins();
+
+  if (!pass) {
+    return (
+      <div style={{
+        background: seriesGradient,
+        borderRadius: 'var(--radius-lg)',
+        padding: 20,
+        position: 'relative',
+        overflow: 'hidden',
+        opacity: 0.5,
+        border: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 18,
+            color: '#fff',
+            marginBottom: 4,
+          }}>
+            {tier === 'reader' ? 'Reader Pass' : 'Patron Pass'}
+          </h3>
+          <p style={{
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.5)',
+            marginBottom: 16,
+          }}>
+            Coming Soon
+          </p>
+          <span style={{
+            background: 'rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '4px 12px',
+            borderRadius: 999,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            display: 'inline-block',
+          }}>
+            Not available
+          </span>
+        </div>
+      </div>
+    );
+  }
   
   const canAccess = hasAccess(seriesId, tier);
   const isAccessible = isOwned || canAccess;
@@ -135,29 +186,55 @@ function PassCard({
           </div>
 
           {!isAccessible && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              disabled={isPurchasing || !isConnected}
-              style={{
-                background: isPurchasing ? 'rgba(255,255,255,0.1)' : '#fff',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 16px',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: 13,
-                color: isPurchasing ? 'rgba(255,255,255,0.6)' : '#000',
-                cursor: isPurchasing || !isConnected ? 'not-allowed' : 'pointer',
-                opacity: !isConnected ? 0.6 : 1,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isPurchasing && isConnected) onBuy();
-              }}
-            >
-              {isPurchasing ? 'Minting...' : !isConnected ? 'Connect Wallet' : 'Buy Pass'}
-            </motion.button>
+            !isConnected ? (
+              <div onClick={e => e.stopPropagation()}>
+                <ConnectButton
+                  client={client}
+                  connectModal={{
+                    size: "compact",
+                    title: "Connect to Buy Pass",
+                    showThirdwebBranding: false,
+                  }}
+                  wallets={wallets}
+                  connectButton={{
+                    style: {
+                      background: '#fff',
+                      border: 'none',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '10px 16px',
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      color: '#000',
+                      cursor: 'pointer',
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isPurchasing}
+                style={{
+                  background: isPurchasing ? 'rgba(255,255,255,0.1)' : '#fff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 16px',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: isPurchasing ? 'rgba(255,255,255,0.6)' : '#000',
+                  cursor: isPurchasing ? 'not-allowed' : 'pointer',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isPurchasing) onBuy();
+                }}
+              >
+                {isPurchasing ? 'Minting...' : `Buy ${pass.label} · ${pass.priceEth} ETH`}
+              </motion.button>
+            )
           )}
         </div>
       </div>
