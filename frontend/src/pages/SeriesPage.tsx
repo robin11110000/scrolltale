@@ -186,55 +186,29 @@ function PassCard({
           </div>
 
           {!isAccessible && (
-            !isConnected ? (
-              <div onClick={e => e.stopPropagation()}>
-                <ConnectButton
-                  client={client}
-                  connectModal={{
-                    size: "compact",
-                    title: "Connect to Buy Pass",
-                    showThirdwebBranding: false,
-                  }}
-                  wallets={wallets}
-                  connectButton={{
-                    style: {
-                      background: '#fff',
-                      border: 'none',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '10px 16px',
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 600,
-                      fontSize: 13,
-                      color: '#000',
-                      cursor: 'pointer',
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                disabled={isPurchasing}
-                style={{
-                  background: isPurchasing ? 'rgba(255,255,255,0.1)' : '#fff',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '10px 16px',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  color: isPurchasing ? 'rgba(255,255,255,0.6)' : '#000',
-                  cursor: isPurchasing ? 'not-allowed' : 'pointer',
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!isPurchasing) onBuy();
-                }}
-              >
-                {isPurchasing ? 'Minting...' : `Buy ${pass.label} · ${pass.priceEth} ETH`}
-              </motion.button>
-            )
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={isPurchasing || !isConnected}
+              style={{
+                background: isPurchasing ? 'rgba(255,255,255,0.1)' : '#fff',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                padding: '10px 16px',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: 13,
+                color: isPurchasing ? 'rgba(255,255,255,0.6)' : '#000',
+                cursor: isPurchasing || !isConnected ? 'not-allowed' : 'pointer',
+                opacity: !isConnected ? 0.6 : 1,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isPurchasing && isConnected) onBuy();
+              }}
+            >
+              {isPurchasing ? 'Minting...' : !isConnected ? 'Connect Wallet' : 'Buy Pass'}
+            </motion.button>
           )}
         </div>
       </div>
