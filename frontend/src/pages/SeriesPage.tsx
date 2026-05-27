@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ConnectButton } from "thirdweb/react";
 import { useCoins } from '../context/CoinContext';
-import { useWallet } from '../context/WalletContext';
+import { useWallet, client, wallets } from '../context/WalletContext';
 import { ALL_SERIES, type Episode } from '../data/series';
 
 function AnimatedCoinCount({ value }: { value: number }) {
@@ -38,7 +39,7 @@ function UnlockModal({
   onClose: () => void;
 }) {
   const { balance, spendCoins } = useCoins();
-  const { isConnected, address, connecting, connectWallet } = useWallet();
+  const { isConnected, address, connecting } = useWallet();
   const canAfford = balance >= episode.coinCost;
   const [phase, setPhase] = useState<'idle' | 'connecting' | 'unlocking' | 'done' | 'broke'>('idle');
 
@@ -47,21 +48,7 @@ function UnlockModal({
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  const handleConnectWallet = async () => {
-    setPhase('connecting');
-    try {
-      await connectWallet();
-      setPhase('idle');
-    } catch (error) {
-      setPhase('idle');
-    }
-  };
-
   const handleUnlock = () => {
-    if (!isConnected) {
-      handleConnectWallet();
-      return;
-    }
     if (!canAfford) { setPhase('broke'); return; }
     setPhase('unlocking');
     const ok = spendCoins(episode.coinCost, `${seriesId}:${episode.id}`);
@@ -221,35 +208,66 @@ function UnlockModal({
               </motion.p>
             )}
 
-            <motion.button
-              onClick={handleUnlock}
-              disabled={phase === 'unlocking' || phase === 'connecting'}
-              whileHover={(!isConnected || canAfford) ? { boxShadow: '0 0 30px rgba(124,58,237,0.5)' } : {}}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                width: '100%',
-                padding: '14px',
-                background: (!isConnected || canAfford) ? 'var(--accent)' : 'var(--surface)',
-                border: (!isConnected || canAfford) ? 'none' : '1px solid var(--border)',
-                borderRadius: 'var(--radius-md)',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize: 14,
-                color: (!isConnected || canAfford) ? '#fff' : 'var(--text-muted)',
-                cursor: (!isConnected || canAfford) ? 'pointer' : 'not-allowed',
-                transition: 'background 0.2s',
-              }}
-            >
-              {phase === 'connecting'
-                ? 'Connecting Wallet...'
-                : phase === 'unlocking'
-                ? 'Unlocking...'
-                : !isConnected
-                ? '🔗 Connect Wallet to Unlock'
-                : canAfford
-                ? `Unlock for 🪙 ${episode.coinCost}`
-                : 'Not enough coins'}
-            </motion.button>
+            {!isConnected ? (
+              <div style={{ width: '100%' }}>
+                <ConnectButton
+                  client={client}
+                  connectModal={{ 
+                    size: "compact",
+                    title: "Connect to Unlock Episode",
+                    showThirdwebBranding: false
+                  }}
+                  wallets={wallets}
+                  connectButton={{
+                    style: {
+                      width: '100%',
+                      padding: '14px',
+                      background: 'var(--accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-md)',
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 700,
+                      fontSize: '14px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 0 0 rgba(124,58,237,0)',
+                    }
+                  }}
+                />
+                <style jsx>{`
+                  button:hover {
+                    box-shadow: 0 0 30px rgba(124,58,237,0.5) !important;
+                  }
+                `}</style>
+              </div>
+            ) : (
+              <motion.button
+                onClick={handleUnlock}
+                disabled={phase === 'unlocking'}
+                whileHover={canAfford ? { boxShadow: '0 0 30px rgba(124,58,237,0.5)' } : {}}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  background: canAfford ? 'var(--accent)' : 'var(--surface)',
+                  border: canAfford ? 'none' : '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: canAfford ? '#fff' : 'var(--text-muted)',
+                  cursor: canAfford ? 'pointer' : 'not-allowed',
+                  transition: 'background 0.2s',
+                }}
+              >
+                {phase === 'unlocking'
+                  ? 'Unlocking...'
+                  : canAfford
+                  ? `Unlock for 🪙 ${episode.coinCost}`
+                  : 'Not enough coins'}
+              </motion.button>
+            )}
 
             <button
               onClick={onClose}

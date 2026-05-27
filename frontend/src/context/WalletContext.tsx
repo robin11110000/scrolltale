@@ -1,5 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { createThirdwebClient } from 'thirdweb';
+import { createWallet } from 'thirdweb/wallets';
+import { useActiveAccount, useDisconnect } from 'thirdweb/react';
+
+export const client = createThirdwebClient({
+  clientId: import.meta.env.VITE_THIRDWEB_CLIENT_ID || 'demo-client-id',
+});
+
+export const wallets = [
+  createWallet("io.metamask"),
+  createWallet("com.coinbase.wallet"),
+  createWallet("me.rainbow"),
+  createWallet("io.rabby"),
+  createWallet("io.zerion.wallet"),
+];
 
 interface WalletContextType {
   isConnected: boolean;
@@ -13,22 +27,18 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | null>(null);
 
-const client = createThirdwebClient({
-  clientId: import.meta.env.VITE_THIRDWEB_CLIENT_ID || 'demo-client-id',
-});
-
 export function WalletProvider({ children }: { children: ReactNode }) {
+  const account = useActiveAccount();
+  const { disconnect } = useDisconnect();
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for existing session on load
     const token = localStorage.getItem('scrolltale_session');
     if (token) {
       setSessionToken(token);
-      // Verify token with backend
       fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -47,66 +57,50 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const connectWallet = async () => {
+  useEffect(() => {
+    if (!account?.address) return;
+    const existingToken = localStorage.getItem('scrolltale_session');
+    if (existingToken) return;
+    authenticateWithWallet(account);
+  }, [account?.address]);
+
+  const authenticateWithWallet = async (acc: typeof account) => {
+    if (!acc?.address) return;
+    setConnecting(true);
     try {
-      setConnecting(true);
-      
-      // Note: This is a simplified version - in production you'd use Thirdweb's 
-      // ConnectWallet component and hooks properly
-      if (typeof window.ethereum !== 'undefined') {
-        // Request account access
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_requestAccounts' 
-        });
-        
-        if (accounts.length > 0) {
-          const userAddress = accounts[0];
-          
-          // Get challenge from backend
-          const challengeRes = await fetch('/api/auth/challenge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address: userAddress })
-          });
-          const { message } = await challengeRes.json();
-          
-          // Sign challenge
-          const signature = await window.ethereum.request({
-            method: 'personal_sign',
-            params: [message, userAddress]
-          });
-          
-          // Verify signature and get session token
-          const verifyRes = await fetch('/api/auth/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              address: userAddress,
-              message,
-              signature
-            })
-          });
-          
-          const { sessionToken: token } = await verifyRes.json();
-          
-          // Store session
-          localStorage.setItem('scrolltale_session', token);
-          setSessionToken(token);
-          setAddress(userAddress);
-          setIsConnected(true);
-        }
-      } else {
-        alert('Please install MetaMask to connect your wallet');
-      }
+      const challengeRes = await fetch('/api/auth/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: acc.address })
+      });
+      const { message } = await challengeRes.json();
+
+      const signature = await acc.signMessage({ message });
+
+      const verifyRes = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: acc.address, message, signature })
+      });
+
+      const { sessionToken: token } = await verifyRes.json();
+      localStorage.setItem('scrolltale_session', token);
+      setSessionToken(token);
+      setAddress(acc.address);
+      setIsConnected(true);
     } catch (error) {
-      console.error('Wallet connection failed:', error);
-      alert('Failed to connect wallet. Please try again.');
+      console.error('Wallet authentication failed:', error);
     } finally {
       setConnecting(false);
     }
   };
 
+  const connectWallet = async () => {
+    console.warn('Use the ConnectButton component to connect a wallet');
+  };
+
   const disconnectWallet = () => {
+    disconnect();
     localStorage.removeItem('scrolltale_session');
     setSessionToken(null);
     setAddress(null);
@@ -114,14 +108,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const signMessage = async (message: string): Promise<string | null> => {
-    if (!address || typeof window.ethereum === 'undefined') return null;
-    
+    if (!account) return null;
     try {
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, address]
-      });
-      return signature;
+      return await account.signMessage({ message });
     } catch (error) {
       console.error('Message signing failed:', error);
       return null;
