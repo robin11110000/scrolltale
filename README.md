@@ -7,17 +7,49 @@ A decentralized webtoon platform where readers own their access as NFT series pa
 🔗 **Live demo:** [https://scrolltale-weld.vercel.app/](https://scrolltale-weld.vercel.app/)
 📜 **Smart contract:** [`0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920`](https://sepolia.basescan.org/address/0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920) on Base Sepolia
 
+> **Note:** This is a hackathon build, actively being iterated. A few flows (creator publishing, in-app marketplace, fiat pricing) are scripted or simplified for the demo and are called out below. The core loop — minting a real on-chain pass that gates content — is fully functional.
+
 ---
 
 ## The idea
 
-Web2 webtoon platforms take 30-50% cuts and "subscriptions" disappear when you stop paying. Scrolltale flips both:
+Web2 webtoon platforms take 30-50% cuts and "subscriptions" disappear the moment you stop paying. Scrolltale flips both:
 
-- **Readers own a series pass NFT** — one mint unlocks the whole series. Tradeable on OpenSea. Resellable like a used manga volume.
-- **Creators earn primary sales plus a 5% royalty** baked into the smart contract — automatically routed on every secondary trade, forever, with no middleman.
-- **Two tiers per series**: Reader Pass for casual fans, Patron Pass for superfans who want bonus chapters and credits.
+- **Readers own a series pass NFT** — one mint unlocks the whole series. It's an asset they hold, not access they rent. Tradeable on any marketplace, resellable like a used manga volume.
+- **Creators earn the primary sale plus a 5% royalty** baked into the smart contract — automatically routed on every secondary trade, forever, with no platform skimming the middle.
+- **Two tiers per series** — Reader Pass for the story, Patron Pass for early access, bonus content, and supporter status.
 
-It's Patreon, except the subscription is an asset the fan actually owns.
+It's Patreon, except the "subscription" is an asset the fan actually owns and can sell.
+
+---
+
+## What the NFTs actually are
+
+This is the part worth being precise about, because it's the heart of the project.
+
+**Each pass is a single NFT that represents access to an entire series — not one NFT per episode, and not the comic art itself.** Think of it like a manga volume: the volume is a physical object you own and can resell; the story printed inside is what you actually read. The two are separate.
+
+- **The pass NFT** lives on-chain. It stores ownership, the tier, the creator's royalty terms, and a pointer to its metadata. It's tiny — a few hundred bytes. This is the "ticket."
+- **The episode panels** live off-chain (hardcoded gradients in this demo; Arweave in production). Putting full webtoon art on-chain would cost a fortune in gas, so no serious NFT project does that. The pass just grants the right to view content stored elsewhere.
+
+So owning a pass is on-chain proof that this wallet bought access to a series. The app checks `balanceOf(wallet, tokenId)` and unlocks every episode if the balance is > 0. The pass is the product; the panels are what the product unlocks.
+
+One pass per series tier — not per episode — is also why readers don't need to buy 80 separate NFTs to finish a series. One mint, whole series.
+
+---
+
+## Reader Pass vs Patron Pass
+
+| | Reader Pass | Patron Pass |
+|---|---|---|
+| Price | 0.001 ETH | 0.005 ETH |
+| Access | All standard episodes | Everything in Reader, plus: |
+| Early access | — | Read new episodes before Reader holders |
+| Bonus content | — | Exclusive chapters, author cuts, side stories |
+| Status | — | Credited as a supporter in the series |
+| Collectibility | Standard | Scarcer, higher secondary-market value |
+
+The Patron tier isn't "one extra episode for 5x the price" — it's the deluxe edition. Same logic as a signed limited-print manga box set: you're paying for early access, status, and scarcity, not page count. (In this demo the Patron perks are represented rather than fully built out; see the roadmap.)
 
 ---
 
@@ -27,17 +59,49 @@ Every series has up to two pass NFTs on a single shared ERC-1155 contract:
 
 | What lives on-chain | What lives off-chain |
 |---|---|
-| Pass ownership (ERC-1155 token balance) | Episode panels (hardcoded gradients in v1; Arweave in v2) |
+| Pass ownership (ERC-1155 token balance) | Episode panels (gradients in v1; Arweave in v2) |
 | Pass metadata (name, image, attributes) | Reader app UI, paywall logic |
-| Royalty enforcement (5% on resale) | Series catalog, episode list |
-| Mint transactions, transfer events | Coin balance, off-chain spend |
+| Royalty terms (5% on resale) | Series catalog, episode list |
+| Mint transactions, transfer events | Off-chain coin balance (fallback) |
 
 **The flow:**
 
-1. Reader connects wallet → signs auth message → JWT session created
-2. Reader clicks "Buy Reader Pass" → `claimTo()` called on the Edition Drop contract → MetaMask popup → 0.001 ETH testnet → ERC-1155 mint
-3. Frontend reads `balanceOf(wallet, tokenId)` → access granted to all episodes of that series
-4. If reader sells the pass on OpenSea, 5% routes to the creator wallet via the contract's royalty config
+1. Reader connects a wallet (MetaMask, Coinbase, Rabby, Rainbow, Zerion via thirdweb)
+2. Reader clicks "Buy Pass" → `claimTo()` is called on the Edition Drop contract → wallet popup → testnet ETH → ERC-1155 mint
+3. Frontend reads `balanceOf(wallet, tokenId)` → if > 0, every episode of that series unlocks
+4. If the reader resells the pass on a marketplace, 5% routes to the creator wallet via the contract's royalty config
+
+---
+
+## Smart contract details
+
+**Contract address (Base Sepolia):** [`0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920`](https://sepolia.basescan.org/address/0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920)
+
+**Standard:** ERC-1155 with claim conditions, lazy minting, and royalty config (thirdweb's `DropERC1155`). One shared contract for the whole platform; each token ID is one tier of one series.
+
+**Royalty:** 5% to the creator wallet on secondary sales.
+
+**Current token IDs:**
+
+| Token ID | Pass | Price |
+|---|---|---|
+| 0 | Neon Requiem · Reader Pass | 0.001 ETH |
+| 1 | Neon Requiem · Patron Pass | 0.005 ETH |
+| 2 | Midnight Bloom · Reader Pass | 0.001 ETH |
+
+More token IDs are lazy-minted as the catalog grows. Series without on-chain passes fall back to the off-chain coin system.
+
+### A note on pricing in ETH
+
+Passes are priced in testnet ETH for hackathon simplicity — it's the native token on Base Sepolia and needs no extra setup. In production, passes would be priced in **USDC** (so a pass reads as "$2", not a fluctuating ETH amount) with a **fiat on-ramp** so readers can pay by card without ever touching a wallet or token. The ETH pricing here is a demo shortcut, not the intended consumer UX.
+
+---
+
+## Why Base Sepolia + ERC-1155
+
+- **Base Sepolia** — cheap, fast, Ethereum-compatible L2 testnet. Free gas via faucet, broad wallet support, works out of the box with thirdweb.
+- **ERC-1155 (not 721)** — one contract holds every pass tier as a separate token ID, instead of deploying a contract per series. Fungible-within-tier (every Reader Pass is interchangeable) maps perfectly to the pass model and keeps minting cheap.
+- **Storage split** — pass metadata on IPFS via thirdweb (free, auto-pinned); episode art off-chain. Production migrates art to Arweave for permanence (pay once, stored long-term — even if Scrolltale disappears, holders keep readable content).
 
 ---
 
@@ -49,52 +113,30 @@ Every series has up to two pass NFTs on a single shared ERC-1155 contract:
 | **Wallet & auth** | thirdweb v5 SDK, MetaMask / Coinbase Wallet / Rabby / Rainbow / Zerion |
 | **Frontend** | React 19, Vite 6, TypeScript, React Router v6, Framer Motion |
 | **Backend** | Express 5, TypeScript, JWT session tokens, signed wallet challenges |
-| **Database** | Postgres via `pg` (waitlist persistence — optional, gracefully disabled in preview) |
-| **Hosting** | Vercel (frontend), backend served as same-origin via Express in production |
+| **Database** | Postgres via `pg` (waitlist — optional, gracefully disabled in preview) |
+| **Hosting** | Vercel (frontend) |
 | **Fonts** | Sora (display), Inter (body) |
-
----
-
-## Smart contract details
-
-**Contract address (Base Sepolia):** [`0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920`](https://sepolia.basescan.org/address/0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920)
-
-**Standard:** ERC-1155 with claim conditions, lazy minting, and royalty enforcement (thirdweb's `DropERC1155`)
-
-**Royalty:** 5% to creator wallet on every secondary sale
-
-**Current token IDs:**
-
-| Token ID | Pass | Price |
-|---|---|---|
-| 0 | Neon Requiem · Reader Pass | 0.001 ETH |
-| 1 | Neon Requiem · Patron Pass | 0.005 ETH |
-| 2 | Midnight Bloom · Reader Pass | 0.001 ETH |
-
-More token IDs will be lazy-minted as the catalog grows.
 
 ---
 
 ## Features in the demo
 
 ### Reader flow
-- **Discover page** — 6 series across genres (Action, Romance, Fantasy, Slice of Life), each with unique cover gradients
-- **Series page** — pass cards at the top (Reader + Patron tiers) above the episode list. Buy buttons trigger real on-chain transactions. Owned passes show token ID and BaseScan link.
-- **Tier-gated content** — Patron-only bonus chapters render greyed-out for Reader holders, accessible for Patron holders. Smart contract checks which tier you hold.
-- **Reader page** — vertical scroll reader with hot-pink progress bar, chapter navigation, end-of-episode cards
+- **Discover** — 6 series across genres, each with unique cover gradients
+- **Series page** — Reader + Patron pass cards above the episode list. Buy buttons trigger real on-chain mints; owned passes show a BaseScan link.
+- **Tier-gated content** — Patron-only bonus chapters are locked for Reader holders and unlock for Patron holders, gated by which token the wallet holds.
+- **Reader** — vertical scroll reader with progress bar and chapter navigation.
 
 ### Creator flow
-- **Creator dashboard** — animated revenue breakdown chart (primary sales + royalty income), mock payout log with on-chain tx hashes
-- **Publish flow** — modal walks through the upload-to-IPFS + lazy-mint sequence (scripted in v1, fully on-chain in v2)
+- **Dashboard** — revenue breakdown (primary sales + royalty income), payout log.
+- **Publish** — modal walks through the upload-to-IPFS + lazy-mint sequence. *Scripted in this build; full on-chain publishing is on the roadmap.*
 
 ### Profile & library
-- **"Your Passes"** — owned pass NFTs with token IDs, mint tx hashes, and direct OpenSea Testnet links for secondary trading
-- **Coin balance** — fallback per-episode purchases for series without on-chain passes yet
-- **Reading stats** — episodes read, series followed, coins spent
+- **Your Passes** — owned pass NFTs with token IDs and marketplace links.
+- **Coin balance** — off-chain fallback for series without on-chain passes yet.
 
 ### Wallet auth
-- **Sign-in with wallet** — challenge/signature flow, JWT session, persists across page loads via localStorage
-- **Supported wallets** — MetaMask, Coinbase Wallet, Rabby, Rainbow, Zerion (via thirdweb)
+- Sign-in with wallet (challenge/signature -> JWT), persisted across reloads.
 
 ---
 
@@ -102,8 +144,8 @@ More token IDs will be lazy-minted as the catalog grows.
 
 | Title | Genre | Author | On-chain |
 |---|---|---|---|
-| Neon Requiem | Action | Yuki Tanaka | ✅ Reader + Patron |
-| Midnight Bloom | Romance | Sera Moon | ✅ Reader |
+| Neon Requiem | Action | Yuki Tanaka | Reader + Patron |
+| Midnight Bloom | Romance | Sera Moon | Reader |
 | Void Walker | Fantasy | Kaz Rem | Coming soon |
 | Static Hearts | Slice of Life | Jo Hwang | Coming soon |
 | Crimson Protocol | Action | Nyx Adler | Coming soon |
@@ -130,21 +172,19 @@ VITE_EDITION_DROP_ADDRESS=0x39bD486eB16BCb20670bE2BBCFE9317BC0aF1920
 VITE_CHAIN_ID=84532
 ```
 
+> When deploying to Vercel, set these same three variables in **Project -> Settings -> Environment Variables** (Production + Preview), then redeploy — Vercel does not read your local `.env`.
+
 ### Development (hot reload)
 
 ```bash
 # Terminal 1 — backend
-cd backend
-npm install
-npm run dev        # Express on :8080
+cd backend && npm install && npm run dev    # Express on :8080
 
 # Terminal 2 — frontend
-cd frontend
-npm install
-npm run dev        # Vite on :5173, proxies /api to :8080
+cd frontend && npm install && npm run dev   # Vite on :5173, proxies /api to :8080
 ```
 
-Open the Vite URL, connect a wallet on Base Sepolia, claim some testnet ETH from the faucet if needed, and buy a pass.
+Connect a wallet on Base Sepolia, grab testnet ETH from the faucet, and buy a pass.
 
 ### Production build (Docker, single origin)
 
@@ -153,82 +193,19 @@ docker build -t scrolltale .
 docker run -p 8080:8080 scrolltale
 ```
 
-Open `http://localhost:8080`. Express serves the compiled SPA and the API under `/api/*`.
-
-### With Postgres (waitlist persistence)
-
-```bash
-docker run \
-  -e DATABASE_URL="postgresql://user:pass@host:5432/scrolltale" \
-  -p 8080:8080 \
-  scrolltale
-```
-
-The server creates the `waitlist` table on startup. Without `DATABASE_URL`, signups are logged to stdout only.
-
----
-
-## Deploying to Vercel
-
-The frontend is deployed on Vercel. Two paths:
-
-### Option A — frontend only (current setup)
-Vercel hosts the React app; the backend runs separately (Railway, Fly, or any Node host).
-
-1. In Vercel project settings, set the root directory to `frontend/`
-2. Build command: `npm run build`
-3. Output directory: `dist`
-4. Add environment variables:
-   - `VITE_THIRDWEB_CLIENT_ID`
-   - `VITE_EDITION_DROP_ADDRESS`
-   - `VITE_CHAIN_ID`
-5. If the backend is hosted elsewhere, set `API_PROXY_TARGET` in Vite config to that URL
-
-### Option B — full Docker (production parity)
-Use the multi-stage `Dockerfile` to deploy to Fly.io, Railway, or any container host. Vercel for static frontend only is simpler for hackathon scope.
+Express serves the compiled SPA and the API under `/api/*` on port 8080.
 
 ---
 
 ## API reference
 
-### `GET /api/health`
-Health check. Returns `{ ok: true, service: "scrolltale-api" }`.
-
-### `POST /api/auth/challenge`
-Generate a signing challenge for wallet authentication.
-
-```json
-{ "address": "0x46298..." }
-```
-
-Returns:
-```json
-{ "message": "Sign this message to authenticate...", "timestamp": 1716489600000 }
-```
-
-### `POST /api/auth/verify`
-Verify a signed challenge and issue a JWT session token.
-
-```json
-{ "address": "0x46298...", "message": "...", "signature": "0x..." }
-```
-
-Returns:
-```json
-{ "success": true, "sessionToken": "eyJ...", "address": "0x46298...", "expiresIn": "7d" }
-```
-
-### `GET /api/auth/me`
-Get the current authenticated wallet from a JWT.
-
-Headers: `Authorization: Bearer <sessionToken>`
-
-### `POST /api/waitlist`
-Email signup with optional role.
-
-```json
-{ "email": "reader@example.com", "role": "reader" }
-```
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/health` | Health check |
+| `POST /api/auth/challenge` | Generate a signing challenge for a wallet |
+| `POST /api/auth/verify` | Verify a signature, issue a JWT session |
+| `GET /api/auth/me` | Resolve the wallet from a JWT (`Authorization: Bearer`) |
+| `POST /api/waitlist` | Email signup with optional `reader`/`creator` role |
 
 ---
 
@@ -244,27 +221,36 @@ Email signup with optional role.
 | Heading font | Sora 700 |
 | Body font | Inter 400 |
 
-Dark mode only. Designed mobile-first; responsive up to desktop.
+Dark mode only. Mobile-first, responsive to desktop.
 
 ---
 
-## What's next (post-hackathon roadmap)
+## Status & roadmap
 
-- **Arweave for episode panels** — permanence guarantee: even if Scrolltale shuts down, holders still own readable content
-- **Creator publishing UI** — full upload flow for new series + automated lazy-minting of pass tiers
-- **In-app secondary marketplace** — list/buy passes without leaving Scrolltale, with creator royalties enforced
-- **Gasless onboarding** — ERC-2771 forwarders + thirdweb in-app wallets for non-crypto-native readers
-- **Mainnet launch** — migration to Base mainnet with real ETH pricing, fiat on-ramp via thirdweb Pay
-- **Subscription tier passes** — monthly access NFTs that auto-renew or expire, separate from per-series passes
+This is an in-progress hackathon build. Some flows are simplified for the demo and will be refined in the next iteration (continuing once Locus Founder build credits are available again):
+
+**Simplified in this build**
+- Creator publishing is a scripted walkthrough, not a live upload-and-mint pipeline yet
+- Patron perks (early access, supporter credits) are represented in the UI, not fully wired
+- Episode panels are placeholder gradients, not real uploaded art
+
+**Planned next**
+- **Real creator publishing** — upload art -> IPFS, auto lazy-mint both pass tiers
+- **USDC pricing + fiat on-ramp** — passes priced as dollars, payable by card via thirdweb Pay
+- **Arweave storage** for permanent episode art
+- **In-app secondary marketplace** with enforced creator royalties
+- **Gasless onboarding** — thirdweb in-app wallets so non-crypto readers can start without a wallet
+- **Mainnet launch** on Base
+- **Subscription-style passes** — time-bound access NFTs alongside per-series passes
 
 ---
 
 ## Brand
 
 - **Tagline:** stories that scroll with you. payouts that don't lie.
-- **Audience:** gen-z webtoon readers worldwide, indie comic artists frustrated with opaque platform payouts
-- **Vibe:** dark-mode-native, late-night neon, rebellious creator energy, soft and rounded, no sharp edges anywhere
-- **Voice:** friendly and welcoming, conversational, warm — *"welcome back, ready to read?"*
+- **Audience:** gen-z webtoon readers worldwide; indie comic artists tired of opaque platform payouts.
+- **Vibe:** dark-mode-native, late-night neon, rebellious creator energy — soft, rounded, no sharp edges.
+- **Voice:** friendly, conversational, warm — *"welcome back, ready to read?"*
 
 ---
 
@@ -272,9 +258,9 @@ Dark mode only. Designed mobile-first; responsive up to desktop.
 
 Built for the [Locus Founder](https://locusfounder.com) hackathon.
 
-- **thirdweb** — wallet auth, smart contract templates, deployment dashboard
-- **Base** — fast and cheap L2 testnet for hackathon iteration
-- **OpenSea Testnet** — secondary market for testing pass transfers and royalties
+- **thirdweb** — wallet auth, contract templates, deployment tooling
+- **Base** — fast, cheap L2 testnet for rapid iteration
+- **OpenSea / marketplace testnets** — secondary trading and royalty testing
 
 ---
 
