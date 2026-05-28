@@ -7,7 +7,7 @@ import { client } from './WalletContext';
 import { TOKEN_ID_MAP } from '../lib/contract';
 
 export interface SeriesPass {
-  tier: 'patron';
+  tier: 'reader' | 'patron';
   tokenId: number;
   mintedAt: number;
   txHash: string;
@@ -22,8 +22,8 @@ export interface CoinCtx {
   seriesFollowing: number;
   spendCoins: (amount: number, episodeKey: string) => boolean;
   addCoins: (amount: number) => void;
-  buyPass: (seriesId: string) => Promise<{ success: boolean; txHash?: string; error?: string }>;
-  hasAccess: (seriesId: string) => boolean;
+  buyPass: (seriesId: string, tier?: 'reader' | 'patron') => Promise<{ success: boolean; txHash?: string; error?: string }>;
+  hasAccess: (seriesId: string, tier?: 'reader' | 'patron') => boolean;
 }
 
 const CoinContext = createContext<CoinCtx | null>(null);
@@ -104,7 +104,7 @@ export function CoinProvider({ children }: { children: ReactNode }) {
 
   const addCoins = (amount: number) => setBalance(b => b + amount);
 
-  const buyPass = async (seriesId: string): Promise<{ success: boolean; txHash?: string; error?: string }> => {
+  const buyPass = async (seriesId: string, tier: 'reader' | 'patron' = 'patron'): Promise<{ success: boolean; txHash?: string; error?: string }> => {
     if (!account) {
       return { success: false, error: 'Wallet not connected' };
     }
@@ -115,7 +115,12 @@ export function CoinProvider({ children }: { children: ReactNode }) {
 
     const tokenIds = TOKEN_ID_MAP[seriesId];
     if (!tokenIds) {
-      return { success: false, error: 'No patron pass available for this series' };
+      return { success: false, error: 'No passes available for this series' };
+    }
+
+    const tokenId = tier === 'patron' ? tokenIds.patron : tokenIds.reader;
+    if (tokenId === null) {
+      return { success: false, error: `${tier === 'patron' ? 'Patron' : 'Reader'} pass not available for this series` };
     }
 
     try {
@@ -128,15 +133,15 @@ export function CoinProvider({ children }: { children: ReactNode }) {
       const tx = claimTo({
         contract,
         to: account.address,
-        tokenId: BigInt(tokenIds.patron),
+        tokenId: BigInt(tokenId),
         quantity: 1n,
       });
 
       const result = await sendTransaction({ transaction: tx, account });
 
       const newPass: SeriesPass = {
-        tier: 'patron',
-        tokenId: tokenIds.patron,
+        tier,
+        tokenId,
         mintedAt: Date.now(),
         txHash: result.transactionHash,
       };
@@ -150,9 +155,11 @@ export function CoinProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const hasAccess = (seriesId: string): boolean => {
+  const hasAccess = (seriesId: string, tier: 'reader' | 'patron' = 'reader'): boolean => {
     const pass = ownedPasses.get(seriesId);
-    return pass?.tier === 'patron';
+    if (!pass) return false;
+    if (tier === 'reader') return pass.tier === 'reader' || pass.tier === 'patron';
+    return pass.tier === 'patron';
   };
 
   return (
