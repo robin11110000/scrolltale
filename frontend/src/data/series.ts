@@ -25,7 +25,6 @@ export interface Series {
   accentColor: string;
   episodes: Episode[];
   passes: {
-    reader: PassTier | null;
     patron: PassTier | null;
   };
 }
@@ -84,8 +83,7 @@ export const ALL_SERIES: Series[] = [
       },
     ],
     passes: {
-      reader: { tokenId: 0, priceEth: '0.001', label: 'Reader Pass' },
-      patron: { tokenId: 1, priceEth: '0.005', label: 'Patron Pass' },
+      patron: { tokenId: 1, priceEth: '0.0015', label: 'Patron Pass' },
     },
   },
   {
@@ -99,8 +97,7 @@ export const ALL_SERIES: Series[] = [
     accentColor: '#cc1493',
     episodes: makeEpisodes(9, 1),
     passes: {
-      reader: { tokenId: 2, priceEth: '0.001', label: 'Reader Pass' },
-      patron: null,
+      patron: { tokenId: 2, priceEth: '0.0015', label: 'Patron Pass' },
     },
   },
   {
@@ -114,7 +111,6 @@ export const ALL_SERIES: Series[] = [
     accentColor: '#0044ff',
     episodes: makeEpisodes(10, 2),
     passes: {
-      reader: null,
       patron: null,
     },
   },
@@ -129,7 +125,6 @@ export const ALL_SERIES: Series[] = [
     accentColor: '#cc8800',
     episodes: makeEpisodes(8, 0),
     passes: {
-      reader: null,
       patron: null,
     },
   },
@@ -144,7 +139,6 @@ export const ALL_SERIES: Series[] = [
     accentColor: '#cc0000',
     episodes: makeEpisodes(10, 1),
     passes: {
-      reader: null,
       patron: null,
     },
   },
@@ -159,7 +153,6 @@ export const ALL_SERIES: Series[] = [
     accentColor: '#7700cc',
     episodes: makeEpisodes(9, 2),
     passes: {
-      reader: null,
       patron: null,
     },
   },
