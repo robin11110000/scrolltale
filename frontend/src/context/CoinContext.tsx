@@ -4,9 +4,10 @@ import { claimTo } from 'thirdweb/extensions/erc1155';
 import { baseSepolia } from 'thirdweb/chains';
 import { useActiveAccount } from 'thirdweb/react';
 import { client } from './WalletContext';
+import { TOKEN_ID_MAP } from '../lib/contract';
 
 export interface SeriesPass {
-  tier: 'reader' | 'patron';
+  tier: 'patron';
   tokenId: number;
   mintedAt: number;
   txHash: string;
@@ -21,8 +22,8 @@ export interface CoinCtx {
   seriesFollowing: number;
   spendCoins: (amount: number, episodeKey: string) => boolean;
   addCoins: (amount: number) => void;
-  buyPass: (seriesId: string, tier: 'reader' | 'patron') => Promise<{ success: boolean; txHash?: string; error?: string }>;
-  hasAccess: (seriesId: string, requiredTier: 'reader' | 'patron') => boolean;
+  buyPass: (seriesId: string) => Promise<{ success: boolean; txHash?: string; error?: string }>;
+  hasAccess: (seriesId: string) => boolean;
 }
 
 const CoinContext = createContext<CoinCtx | null>(null);
@@ -44,13 +45,18 @@ export function CoinProvider({ children }: { children: ReactNode }) {
 
   const addCoins = (amount: number) => setBalance(b => b + amount);
 
-  const buyPass = async (seriesId: string, tier: 'reader' | 'patron'): Promise<{ success: boolean; txHash?: string; error?: string }> => {
+  const buyPass = async (seriesId: string): Promise<{ success: boolean; txHash?: string; error?: string }> => {
     if (!account) {
       return { success: false, error: 'Wallet not connected' };
     }
 
     if (!import.meta.env.VITE_EDITION_DROP_ADDRESS) {
       return { success: false, error: 'Contract address not configured' };
+    }
+
+    const tokenIds = TOKEN_ID_MAP[seriesId];
+    if (!tokenIds) {
+      return { success: false, error: 'No patron pass available for this series' };
     }
 
     try {
@@ -60,15 +66,10 @@ export function CoinProvider({ children }: { children: ReactNode }) {
         address: import.meta.env.VITE_EDITION_DROP_ADDRESS,
       });
 
-      // Calculate token ID based on seriesId and tier
-      // Token ID mapping: seriesIndex * 2 + (tier === 'patron' ? 1 : 0)
-      const seriesIndex = getSeriesIndex(seriesId);
-      const passTokenId = seriesIndex * 2 + (tier === 'patron' ? 1 : 0);
-
       const tx = claimTo({
         contract,
         to: account.address,
-        tokenId: BigInt(passTokenId),
+        tokenId: BigInt(tokenIds.patron),
         quantity: 1n,
       });
 
@@ -76,8 +77,8 @@ export function CoinProvider({ children }: { children: ReactNode }) {
       
       // Add to owned passes
       const newPass: SeriesPass = {
-        tier,
-        tokenId: passTokenId,
+        tier: 'patron',
+        tokenId: tokenIds.patron,
         mintedAt: Date.now(),
         txHash: result.transactionHash,
       };
@@ -91,19 +92,9 @@ export function CoinProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const hasAccess = (seriesId: string, requiredTier: 'reader' | 'patron'): boolean => {
+  const hasAccess = (seriesId: string): boolean => {
     const pass = ownedPasses.get(seriesId);
-    if (!pass) return false;
-    
-    // Patron pass grants access to everything, reader pass only grants reader access
-    if (requiredTier === 'reader') return true;
-    return pass.tier === 'patron';
-  };
-
-  // Helper function to map series ID to index
-  const getSeriesIndex = (seriesId: string): number => {
-    const seriesOrder = ['neon-requiem', 'midnight-bloom', 'void-walker', 'static-hearts', 'crimson-protocol', 'soft-apocalypse'];
-    return seriesOrder.indexOf(seriesId);
+    return pass?.tier === 'patron';
   };
 
   return (

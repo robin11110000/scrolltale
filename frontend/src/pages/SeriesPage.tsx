@@ -29,8 +29,7 @@ function AnimatedCoinCount({ value }: { value: number }) {
   return <>{display.current.toLocaleString()}</>;
 }
 
-function PassCard({
-  tier,
+function PatronPassCard({
   pass,
   seriesId,
   seriesGradient,
@@ -38,8 +37,7 @@ function PassCard({
   isOwned,
   isPurchasing,
 }: {
-  tier: 'reader' | 'patron';
-  pass: PassTier;
+  pass: PassTier | null;
   seriesId: string;
   seriesGradient: string;
   onBuy: () => void;
@@ -48,8 +46,59 @@ function PassCard({
 }) {
   const { isConnected } = useWallet();
   const { hasAccess } = useCoins();
-  
-  const canAccess = hasAccess(seriesId, tier);
+
+  if (!pass) {
+    return (
+      <div style={{
+        background: seriesGradient,
+        borderRadius: 'var(--radius-lg)',
+        padding: 20,
+        position: 'relative',
+        overflow: 'hidden',
+        opacity: 0.5,
+        border: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 18,
+            color: '#fff',
+            marginBottom: 4,
+          }}>
+            Patron Pass
+          </h3>
+          <p style={{
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.5)',
+            marginBottom: 16,
+          }}>
+            Coming Soon
+          </p>
+          <span style={{
+            background: 'rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '4px 12px',
+            borderRadius: 999,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            display: 'inline-block',
+          }}>
+            Not available
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const canAccess = hasAccess(seriesId);
   const isAccessible = isOwned || canAccess;
 
   return (
@@ -62,17 +111,15 @@ function PassCard({
         padding: 20,
         position: 'relative',
         overflow: 'hidden',
-        cursor: isAccessible ? 'default' : 'pointer',
         border: isAccessible ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
       }}
-      onClick={isAccessible ? undefined : onBuy}
     >
       <div style={{
         position: 'absolute',
         inset: 0,
         background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%)',
       }} />
-      
+
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
@@ -94,7 +141,7 @@ function PassCard({
               {tier === 'patron' ? 'Full Access + Bonus' : 'All Episodes'}
             </p>
           </div>
-          
+
           {isAccessible && (
             <span style={{
               background: 'var(--accent)',
@@ -115,6 +162,7 @@ function PassCard({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 12,
         }}>
           <div>
             <p style={{
@@ -135,29 +183,52 @@ function PassCard({
           </div>
 
           {!isAccessible && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              disabled={isPurchasing || !isConnected}
-              style={{
-                background: isPurchasing ? 'rgba(255,255,255,0.1)' : '#fff',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 16px',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: 13,
-                color: isPurchasing ? 'rgba(255,255,255,0.6)' : '#000',
-                cursor: isPurchasing || !isConnected ? 'not-allowed' : 'pointer',
-                opacity: !isConnected ? 0.6 : 1,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isPurchasing && isConnected) onBuy();
-              }}
-            >
-              {isPurchasing ? 'Minting...' : !isConnected ? 'Connect Wallet' : 'Buy Pass'}
-            </motion.button>
+            !isConnected ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <ConnectButton
+                  client={client}
+                  connectModal={{ size: "compact" }}
+                  wallets={wallets}
+                  connectButton={{
+                    style: {
+                      background: '#fff',
+                      border: 'none',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '10px 16px',
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: '600',
+                      fontSize: '13px',
+                      color: '#000',
+                      cursor: 'pointer',
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isPurchasing}
+                style={{
+                  background: isPurchasing ? 'rgba(255,255,255,0.1)' : '#fff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 16px',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: isPurchasing ? 'rgba(255,255,255,0.6)' : '#000',
+                  cursor: isPurchasing ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isPurchasing) onBuy();
+                }}
+              >
+                {isPurchasing ? 'Minting...' : 'Buy Pass'}
+              </motion.button>
+            )
           )}
         </div>
       </div>
@@ -175,9 +246,9 @@ function UnlockModal({
   onClose: () => void;
 }) {
   const { balance, spendCoins } = useCoins();
-  const { isConnected, address, connecting } = useWallet();
+  const { isConnected } = useWallet();
   const canAfford = balance >= episode.coinCost;
-  const [phase, setPhase] = useState<'idle' | 'connecting' | 'unlocking' | 'done' | 'broke'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'unlocking' | 'done' | 'broke'>('idle');
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -253,156 +324,121 @@ function UnlockModal({
             </p>
             <p style={{
               fontSize: 13, color: 'var(--text-muted)',
-              marginBottom: isConnected ? 16 : 24,
+              marginBottom: isConnected ? 16 : 20,
             }}>
               {episode.title}
             </p>
 
-            {isConnected && address && (
-              <div style={{
-                background: 'var(--surface)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '10px 16px',
-                marginBottom: 20,
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}>
-                <div style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: '#10b981',
-                  boxShadow: '0 0 8px rgba(16,185,129,0.4)',
-                }} />
-                <span style={{
-                  fontSize: 11,
-                  color: 'var(--text-muted)',
-                  marginRight: 8,
-                }}>
-                  Connected:
-                </span>
-                <code style={{
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  color: 'var(--text)',
-                  background: 'rgba(124,58,237,0.1)',
-                  padding: '2px 6px',
-                  borderRadius: 4,
-                }}>
-                  {address.slice(0, 6)}...{address.slice(-4)}
-                </code>
-              </div>
-            )}
-
-            <div style={{
-              background: 'var(--surface)',
-              borderRadius: 'var(--radius-md)',
-              padding: '16px 20px',
-              marginBottom: 20,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              border: '1px solid var(--border)',
-            }}>
-              <div>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-                  Episode cost
-                </p>
-                <p style={{
-                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
-                  color: 'var(--accent-light)', fontVariantNumeric: 'tabular-nums',
-                }}>
-                  🪙 {episode.coinCost}
-                </p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-                  Your balance
-                </p>
-                <p style={{
-                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
-                  color: canAfford ? 'var(--text)' : '#cc3333',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>
-                  🪙 <AnimatedCoinCount value={balance} />
-                </p>
-              </div>
-            </div>
-
-            {phase === 'broke' && (
-              <motion.p
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  fontSize: 13, color: '#cc3333',
-                  textAlign: 'center', marginBottom: 12,
-                }}
-              >
-                Not enough coins — head to Profile to top up.
-              </motion.p>
-            )}
-
             {!isConnected ? (
-              <div style={{ width: '100%' }}>
-                <ConnectButton
-                  client={client}
-                  connectModal={{ 
-                    size: "compact",
-                    title: "Connect to Unlock Episode",
-                    showThirdwebBranding: false
-                  }}
-                  wallets={wallets}
-                  connectButton={{
-                    style: {
-                      width: '100%',
-                      padding: '14px',
-                      background: 'var(--accent)',
-                      border: 'none',
-                      borderRadius: 'var(--radius-md)',
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 700,
-                      fontSize: '14px',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 0 0 rgba(124,58,237,0)',
-                    }
-                  }}
-                />
-                <style jsx>{`
-                  button:hover {
-                    box-shadow: 0 0 30px rgba(124,58,237,0.5) !important;
-                  }
-                `}</style>
-              </div>
+              <>
+                <p style={{
+                  fontSize: 13, color: 'var(--text-secondary)',
+                  textAlign: 'center', marginBottom: 20, lineHeight: 1.6,
+                }}>
+                  Connect your wallet to unlock this episode.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <ConnectButton
+                    client={client}
+                    connectModal={{
+                      size: "compact",
+                      title: "Connect to Unlock Episode",
+                      showThirdwebBranding: false,
+                    }}
+                    wallets={wallets}
+                    connectButton={{
+                      style: {
+                        width: '100%',
+                        padding: '14px',
+                        background: 'var(--accent)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                      },
+                    }}
+                  />
+                </div>
+              </>
             ) : (
-              <motion.button
-                onClick={handleUnlock}
-                disabled={phase === 'unlocking'}
-                whileHover={canAfford ? { boxShadow: '0 0 30px rgba(124,58,237,0.5)' } : {}}
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  background: canAfford ? 'var(--accent)' : 'var(--surface)',
-                  border: canAfford ? 'none' : '1px solid var(--border)',
+              <>
+                <div style={{
+                  background: 'var(--surface)',
                   borderRadius: 'var(--radius-md)',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: canAfford ? '#fff' : 'var(--text-muted)',
-                  cursor: canAfford ? 'pointer' : 'not-allowed',
-                  transition: 'background 0.2s',
-                }}
-              >
-                {phase === 'unlocking'
-                  ? 'Unlocking...'
-                  : canAfford
-                  ? `Unlock for 🪙 ${episode.coinCost}`
-                  : 'Not enough coins'}
-              </motion.button>
+                  padding: '16px 20px',
+                  marginBottom: 20,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  border: '1px solid var(--border)',
+                }}>
+                  <div>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      Episode cost
+                    </p>
+                    <p style={{
+                      fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
+                      color: 'var(--accent-light)', fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      🪙 {episode.coinCost}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      Your balance
+                    </p>
+                    <p style={{
+                      fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
+                      color: canAfford ? 'var(--text)' : '#cc3333',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      🪙 <AnimatedCoinCount value={balance} />
+                    </p>
+                  </div>
+                </div>
+
+                {phase === 'broke' && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      fontSize: 13, color: '#cc3333',
+                      textAlign: 'center', marginBottom: 12,
+                    }}
+                  >
+                    Not enough coins — head to Profile to top up.
+                  </motion.p>
+                )}
+
+                <motion.button
+                  onClick={handleUnlock}
+                  disabled={phase === 'unlocking'}
+                  whileHover={canAfford ? { boxShadow: '0 0 30px rgba(124,58,237,0.5)' } : {}}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    background: canAfford ? 'var(--accent)' : 'var(--surface)',
+                    border: canAfford ? 'none' : '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    color: canAfford ? '#fff' : 'var(--text-muted)',
+                    cursor: canAfford ? 'pointer' : 'not-allowed',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  {phase === 'unlocking'
+                    ? 'Unlocking...'
+                    : canAfford
+                    ? `Unlock for 🪙 ${episode.coinCost}`
+                    : 'Not enough coins'}
+                </motion.button>
+              </>
             )}
 
             <button
@@ -415,7 +451,7 @@ function UnlockModal({
                 color: 'var(--text-muted)',
                 fontSize: 14,
                 cursor: 'pointer',
-                marginTop: 4,
+                marginTop: 8,
               }}
             >
               Cancel
@@ -442,14 +478,13 @@ function EpisodeRow({
 }) {
   const navigate = useNavigate();
   const { hasAccess } = useCoins();
-  
+
   const hasReaderPass = hasAccess(seriesId, 'reader');
   const hasPatronPass = hasAccess(seriesId, 'patron');
   const unlockedByPass = hasReaderPass || hasPatronPass;
-  
-  // Check if episode is accessible
-  const accessible = episode.isFree || isOwned || 
-    (unlockedByPass && !episode.isPatronOnly) || 
+
+  const accessible = episode.isFree || isOwned ||
+    (unlockedByPass && !episode.isPatronOnly) ||
     (hasPatronPass && episode.isPatronOnly);
 
   return (
@@ -660,21 +695,19 @@ export default function SeriesPage() {
     setUnlocking(null);
   };
 
-  const handleBuyPass = async (tier: 'reader' | 'patron') => {
+  const handleBuyPass = async () => {
     if (!series || !id) return;
-    
-    setPurchasingPass(tier);
+
+    setPurchasingPass('patron');
     try {
-      const result = await buyPass(id, tier);
+      const result = await buyPass(id);
       if (result.success && result.txHash) {
-        // Show success state - could add a success modal here
-        console.log('Pass purchased successfully!', result.txHash);
+        console.log('Patron pass purchased successfully!', result.txHash);
       } else {
-        // Show error state
-        console.error('Pass purchase failed:', result.error);
+        console.error('Patron pass purchase failed:', result.error);
       }
     } catch (error) {
-      console.error('Pass purchase error:', error);
+      console.error('Patron pass purchase error:', error);
     } finally {
       setPurchasingPass(null);
     }
@@ -825,27 +858,17 @@ export default function SeriesPage() {
           }}>
             Tradeable NFTs that unlock episodes · Creator royalties on resale
           </p>
-          
+
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: 16,
           }}>
-            <PassCard
-              tier="reader"
-              pass={series.passes.reader}
-              seriesId={series.id}
-              seriesGradient={series.coverGradient}
-              onBuy={() => handleBuyPass('reader')}
-              isOwned={ownedPasses.has(series.id) && ownedPasses.get(series.id)?.tier === 'reader'}
-              isPurchasing={purchasingPass === 'reader'}
-            />
-            <PassCard
-              tier="patron"
+            <PatronPassCard
               pass={series.passes.patron}
               seriesId={series.id}
               seriesGradient={series.coverGradient}
-              onBuy={() => handleBuyPass('patron')}
+              onBuy={() => handleBuyPass()}
               isOwned={ownedPasses.has(series.id) && ownedPasses.get(series.id)?.tier === 'patron'}
               isPurchasing={purchasingPass === 'patron'}
             />
