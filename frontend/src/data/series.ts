@@ -70,7 +70,18 @@ export const ALL_SERIES: Series[] = [
     coverGradient: 'linear-gradient(145deg, #0a0012 0%, #2d0042 55%, #6b0080 100%)',
     bannerGradient: 'linear-gradient(180deg, #0a0012 0%, #2d0042 70%, #000 100%)',
     accentColor: '#9b00cc',
-    episodes: makeEpisodes(10, 0, true),
+    episodes: [
+      ...makeEpisodes(10, 0),
+      {
+        id: 'ep-bonus',
+        number: 11,
+        title: 'Patron Cut: Behind the Frequency',
+        isFree: false,
+        coinCost: 0,
+        isPatronOnly: true,
+        isBonus: true,
+      },
+    ],
     passes: {
       patron: { tokenId: 1, priceEth: '0.0015', label: 'Patron Pass' },
     },
