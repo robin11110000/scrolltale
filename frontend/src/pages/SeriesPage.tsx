@@ -273,15 +273,9 @@ function UnlockModal({
       exit={{ opacity: 0 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 200,
-        background: 'rgba(0,0,0,0.85)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
       }}
     >
       <motion.div
@@ -290,12 +284,8 @@ function UnlockModal({
         exit={{ y: 30, opacity: 0, scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 320, damping: 30 }}
         style={{
-          background: 'var(--surface-raised)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-xl)',
-          padding: 32,
-          width: '100%',
-          maxWidth: 420,
+          background: 'var(--surface-raised)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-xl)', padding: 32, width: '100%', maxWidth: 420,
           boxShadow: '0 0 80px rgba(124,58,237,0.08)',
         }}
       >
@@ -306,43 +296,31 @@ function UnlockModal({
             style={{ textAlign: 'center', padding: '16px 0' }}
           >
             <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-            <p style={{
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20,
-              color: 'var(--accent-light)', marginBottom: 6,
-            }}>Episode unlocked!</p>
-            <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-              It's yours forever.
+            <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--accent-light)', marginBottom: 6 }}>
+              Episode unlocked!
             </p>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>It's yours forever.</p>
           </motion.div>
         ) : (
           <>
-            <p style={{
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18,
-              color: 'var(--text)', marginBottom: 4,
-            }}>
+            <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--text)', marginBottom: 4 }}>
               Unlock Episode {episode.number}
             </p>
-            <p style={{
-              fontSize: 13, color: 'var(--text-muted)',
-              marginBottom: isConnected ? 16 : 20,
-            }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
               {episode.title}
             </p>
 
             {!isConnected ? (
               <>
-                <p style={{
-                  fontSize: 13, color: 'var(--text-secondary)',
-                  textAlign: 'center', marginBottom: 20, lineHeight: 1.6,
-                }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', marginBottom: 20, lineHeight: 1.6 }}>
                   Connect your wallet to unlock this episode.
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
                   <ConnectButton
                     client={client}
                     connectModal={{
-                      size: "compact",
-                      title: "Connect to Unlock Episode",
+                      size: 'compact',
+                      title: 'Connect to Unlock Episode',
                       showThirdwebBranding: false,
                     }}
                     wallets={wallets}
@@ -366,35 +344,20 @@ function UnlockModal({
             ) : (
               <>
                 <div style={{
-                  background: 'var(--surface)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '16px 20px',
-                  marginBottom: 20,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  background: 'var(--surface)', borderRadius: 'var(--radius-md)',
+                  padding: '16px 20px', marginBottom: 20,
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   border: '1px solid var(--border)',
                 }}>
                   <div>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-                      Episode cost
-                    </p>
-                    <p style={{
-                      fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
-                      color: 'var(--accent-light)', fontVariantNumeric: 'tabular-nums',
-                    }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Episode cost</p>
+                    <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, color: 'var(--accent-light)', fontVariantNumeric: 'tabular-nums' }}>
                       🪙 {episode.coinCost}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-                      Your balance
-                    </p>
-                    <p style={{
-                      fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
-                      color: canAfford ? 'var(--text)' : '#cc3333',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Your balance</p>
+                    <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, color: canAfford ? 'var(--text)' : '#cc3333', fontVariantNumeric: 'tabular-nums' }}>
                       🪙 <AnimatedCoinCount value={balance} />
                     </p>
                   </div>
@@ -402,12 +365,8 @@ function UnlockModal({
 
                 {phase === 'broke' && (
                   <motion.p
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{
-                      fontSize: 13, color: '#cc3333',
-                      textAlign: 'center', marginBottom: 12,
-                    }}
+                    initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                    style={{ fontSize: 13, color: '#cc3333', textAlign: 'center', marginBottom: 12 }}
                   >
                     Not enough coins — head to Profile to top up.
                   </motion.p>
@@ -419,40 +378,23 @@ function UnlockModal({
                   whileHover={canAfford ? { boxShadow: '0 0 30px rgba(124,58,237,0.5)' } : {}}
                   whileTap={{ scale: 0.97 }}
                   style={{
-                    width: '100%',
-                    padding: '14px',
+                    width: '100%', padding: '14px',
                     background: canAfford ? 'var(--accent)' : 'var(--surface)',
                     border: canAfford ? 'none' : '1px solid var(--border)',
                     borderRadius: 'var(--radius-md)',
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 700,
-                    fontSize: 14,
+                    fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14,
                     color: canAfford ? '#fff' : 'var(--text-muted)',
                     cursor: canAfford ? 'pointer' : 'not-allowed',
-                    transition: 'background 0.2s',
                   }}
                 >
-                  {phase === 'unlocking'
-                    ? 'Unlocking...'
-                    : canAfford
-                    ? `Unlock for 🪙 ${episode.coinCost}`
-                    : 'Not enough coins'}
+                  {phase === 'unlocking' ? 'Unlocking...' : canAfford ? `Unlock for 🪙 ${episode.coinCost}` : 'Not enough coins'}
                 </motion.button>
               </>
             )}
 
             <button
               onClick={onClose}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                fontSize: 14,
-                cursor: 'pointer',
-                marginTop: 8,
-              }}
+              style={{ width: '100%', padding: '12px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: 14, cursor: 'pointer', marginTop: 8 }}
             >
               Cancel
             </button>

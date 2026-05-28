@@ -30,33 +30,37 @@ const WalletContext = createContext<WalletContextType | null>(null);
 export function WalletProvider({ children }: { children: ReactNode }) {
   const account = useActiveAccount();
   const { disconnect } = useDisconnect();
-  const [isConnected, setIsConnected] = useState(false);
-  const [address, setAddress] = useState<string | null>(null);
+
+  // Derive directly from thirdweb state — no duplicate local state
+  const isConnected = !!account;
+  const address = account?.address || null;
   const [connecting, setConnecting] = useState(false);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
+  // Restore session token from localStorage on mount
   useEffect(() => {
     const token = localStorage.getItem('scrolltale_session');
     if (token) {
       setSessionToken(token);
+      // Validate token is still good
       fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.address) {
-          setAddress(data.address);
-          setIsConnected(true);
-        } else {
+        .then(res => res.json())
+        .then(data => {
+          if (!data.address) {
+            localStorage.removeItem('scrolltale_session');
+            setSessionToken(null);
+          }
+        })
+        .catch(() => {
           localStorage.removeItem('scrolltale_session');
-        }
-      })
-      .catch(() => {
-        localStorage.removeItem('scrolltale_session');
-      });
+          setSessionToken(null);
+        });
     }
   }, []);
 
+  // Auto-authenticate when wallet connects
   useEffect(() => {
     if (!account?.address) return;
     const existingToken = localStorage.getItem('scrolltale_session');
@@ -74,20 +78,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ address: acc.address })
       });
       const { message } = await challengeRes.json();
-
       const signature = await acc.signMessage({ message });
-
       const verifyRes = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: acc.address, message, signature })
       });
-
       const { sessionToken: token } = await verifyRes.json();
       localStorage.setItem('scrolltale_session', token);
       setSessionToken(token);
-      setAddress(acc.address);
-      setIsConnected(true);
     } catch (error) {
       console.error('Wallet authentication failed:', error);
     } finally {
@@ -100,11 +99,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const disconnectWallet = () => {
-    disconnect();
+    if (account) disconnect(account as any);
     localStorage.removeItem('scrolltale_session');
     setSessionToken(null);
-    setAddress(null);
-    setIsConnected(false);
   };
 
   const signMessage = async (message: string): Promise<string | null> => {
@@ -117,18 +114,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = {
-    isConnected,
-    address,
-    connecting,
-    sessionToken,
-    connectWallet,
-    disconnectWallet,
-    signMessage,
-  };
-
   return (
-    <WalletContext.Provider value={value}>
+    <WalletContext.Provider value={{
+      isConnected,
+      address,
+      connecting,
+      sessionToken,
+      connectWallet,
+      disconnectWallet,
+      signMessage,
+    }}>
       {children}
     </WalletContext.Provider>
   );
