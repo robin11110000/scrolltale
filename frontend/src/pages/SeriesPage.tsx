@@ -301,6 +301,70 @@ function UnlockModal({
             </p>
             <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>It's yours forever.</p>
           </motion.div>
+        ) : phase === 'connect' ? (
+          <>
+            <p style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18,
+              color: 'var(--text)', marginBottom: 4,
+            }}>
+              Unlock Episode {episode.number}
+            </p>
+            <p style={{
+              fontSize: 13, color: 'var(--text-muted)',
+              marginBottom: 20,
+            }}>
+              {episode.title}
+            </p>
+            <p style={{
+              fontSize: 13, color: 'var(--text-secondary)',
+              textAlign: 'center', marginBottom: 20, lineHeight: 1.6,
+            }}>
+              Connect your wallet to unlock this episode with coins.
+            </p>
+            <div style={{ width: '100%' }}>
+              <ConnectButton
+                client={client}
+                connectModal={{ 
+                  size: "compact",
+                  title: "Connect to Unlock Episode",
+                  showThirdwebBranding: false
+                }}
+                wallets={wallets}
+                connectButton={{
+                  style: {
+                    width: '100%',
+                    padding: '14px',
+                    background: 'var(--accent)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 0 0 rgba(124,58,237,0)',
+                  }
+                }}
+                onConnect={() => setPhase('unlock')}
+              />
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: 14,
+                cursor: 'pointer',
+                marginTop: 8,
+              }}
+            >
+              Cancel
+            </button>
+          </>
         ) : (
           <>
             <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--text)', marginBottom: 4 }}>
