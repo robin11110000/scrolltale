@@ -38,7 +38,7 @@ const TITLE_BANKS = [
 
 function makeEpisodes(count: number, bank: number, hasPatronBonus = false): Episode[] {
   const titles = TITLE_BANKS[bank % TITLE_BANKS.length];
-  const episodes = Array.from({ length: count }, (_, i) => ({
+  const episodes: Episode[] = Array.from({ length: count }, (_, i) => ({
     id: `ep${i + 1}`,
     number: i + 1,
     title: titles[i] ?? `Chapter ${i + 1}`,
@@ -62,21 +62,6 @@ function makeEpisodes(count: number, bank: number, hasPatronBonus = false): Epis
 }
 
 export const ALL_SERIES: Series[] = [
-  {
-    id: 'midnight-bloom',
-    title: 'Midnight Bloom',
-    author: 'Sera Moon',
-    genre: 'Romance',
-    description: 'Two rival florists forced to share the last greenhouse discover that love, like flowers, needs darkness to bloom. Slow. Soft. Achingly real.',
-    coverGradient: 'linear-gradient(145deg, #0d0010 0%, #1f0030 55%, #cc1493 100%)',
-    bannerGradient: 'linear-gradient(180deg, #0d0010 0%, #1f0030 70%, #000 100%)',
-    accentColor: '#cc1493',
-    episodes: makeEpisodes(9, 1),
-    passes: {
-      reader: { tokenId: 2, priceEth: '0.001', label: 'Reader Pass' },
-      patron: null,
-    },
-  },
   {
     id: 'void-walker',
     title: 'Void Walker',
