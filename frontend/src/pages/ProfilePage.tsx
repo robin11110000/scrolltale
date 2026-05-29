@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ConnectButton } from 'thirdweb/react';
 import { useCoins } from '../context/CoinContext';
+import { client, wallets } from '../context/WalletContext';
 import { ALL_SERIES } from '../data/series';
 
 const COIN_PACKS = [
@@ -165,33 +167,25 @@ function CoinPackModal({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        <button
-          disabled
-          style={{
-            width: '100%',
-            padding: '14px',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md)',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: 14,
-            color: 'var(--text-muted)',
-            cursor: 'not-allowed',
-            letterSpacing: '0.04em',
+        <ConnectButton
+          client={client}
+          connectModal={{ size: "compact" }}
+          wallets={wallets}
+          connectButton={{
+            style: {
+              width: '100%',
+              padding: '14px',
+              background: 'var(--accent)',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 14,
+              color: '#fff',
+              cursor: 'pointer',
+            },
           }}
-        >
-          Coming Soon
-        </button>
-        <p style={{
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          textAlign: 'center',
-          marginTop: 10,
-          lineHeight: 1.6,
-        }}>
-          Finish Stripe onboarding in the Payments tab to enable purchases.
-        </p>
+        />
       </motion.div>
     </motion.div>
   );
