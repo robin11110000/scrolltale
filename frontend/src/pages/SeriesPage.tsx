@@ -140,7 +140,7 @@ function PatronPassCard({
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
             }}>
-              {tier === 'patron' ? 'Full Access + Bonus' : 'All Episodes'}
+              Full Access + Bonus
             </p>
           </div>
 

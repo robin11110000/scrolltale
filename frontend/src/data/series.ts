@@ -38,7 +38,7 @@ const TITLE_BANKS = [
 
 function makeEpisodes(count: number, bank: number, hasPatronBonus = false): Episode[] {
   const titles = TITLE_BANKS[bank % TITLE_BANKS.length];
-  const episodes = Array.from({ length: count }, (_, i) => ({
+  const episodes: Episode[] = Array.from({ length: count }, (_, i) => ({
     id: `ep${i + 1}`,
     number: i + 1,
     title: titles[i] ?? `Chapter ${i + 1}`,
