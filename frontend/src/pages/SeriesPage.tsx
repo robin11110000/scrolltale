@@ -36,6 +36,7 @@ function PatronPassCard({
   onBuy,
   isOwned,
   isPurchasing,
+  lastTxHash,
 }: {
   pass: PassTier | null;
   seriesId: string;
@@ -43,6 +44,7 @@ function PatronPassCard({
   onBuy: () => void;
   isOwned: boolean;
   isPurchasing: boolean;
+  lastTxHash?: string;
 }) {
   const { isConnected } = useWallet();
   const { hasAccess } = useCoins();
@@ -142,19 +144,28 @@ function PatronPassCard({
             </p>
           </div>
 
-          {isAccessible && (
-            <span style={{
-              background: 'var(--accent)',
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '4px 12px',
-              borderRadius: 999,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-            }}>
-              Owned
-            </span>
+          {isAccessible && pass && (
+            <a
+              href={`https://sepolia.basescan.org/token/${import.meta.env.VITE_EDITION_DROP_ADDRESS}?a=${pass.tokenId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{ textDecoration: 'none' }}
+            >
+              <span style={{
+                background: 'var(--accent)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '4px 12px',
+                borderRadius: 999,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}>
+                Owned · Token #{pass.tokenId}
+              </span>
+            </a>
           )}
         </div>
 
@@ -180,6 +191,23 @@ function PatronPassCard({
             }}>
               + 5% creator royalty on resale
             </p>
+            {isAccessible && lastTxHash && (
+              <a
+                href={`https://sepolia.basescan.org/tx/${lastTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{
+                  fontSize: 11,
+                  color: 'var(--accent-light)',
+                  textDecoration: 'none',
+                  display: 'inline-block',
+                  marginTop: 4,
+                }}
+              >
+                View on BaseScan →
+              </a>
+            )}
           </div>
 
           {!isAccessible && (
@@ -226,7 +254,7 @@ function PatronPassCard({
                   if (!isPurchasing) onBuy();
                 }}
               >
-                {isPurchasing ? 'Minting...' : 'Buy Pass'}
+                {isPurchasing ? 'Confirming on Base Sepolia...' : 'Buy Pass'}
               </motion.button>
             )
           )}
@@ -813,6 +841,7 @@ export default function SeriesPage() {
               onBuy={() => handleBuyPass()}
               isOwned={ownedPasses.has(series.id) && ownedPasses.get(series.id)?.tier === 'patron'}
               isPurchasing={purchasingPass === 'patron'}
+              lastTxHash={ownedPasses.get(series.id)?.txHash}
             />
           </div>
         </div>
