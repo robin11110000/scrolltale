@@ -13,7 +13,6 @@ const EPISODE_REVENUE = [
 ];
 
 const CREATOR_SERIES = [
-  { title: 'Neon Requiem', episodes: 8, earnings: 7230, gradient: 'linear-gradient(135deg, #0a0012 0%, #2d0042 100%)' },
   { title: 'Static Hearts', episodes: 5, earnings: 3150, gradient: 'linear-gradient(135deg, #0a080a 0%, #181310 100%)' },
   { title: 'Drift Signal', episodes: 10, earnings: 2070, gradient: 'linear-gradient(135deg, #100000 0%, #2a0000 100%)' },
 ];
