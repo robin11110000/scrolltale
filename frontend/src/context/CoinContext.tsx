@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { getContract, sendTransaction } from 'thirdweb';
-import { claimTo } from 'thirdweb/extensions/erc1155';
+import { claimTo, balanceOf } from 'thirdweb/extensions/erc1155';
 import { baseSepolia } from 'thirdweb/chains';
 import { useActiveAccount } from 'thirdweb/react';
 import { client } from './WalletContext';
@@ -34,6 +34,65 @@ export function CoinProvider({ children }: { children: ReactNode }) {
   const [ownedPasses, setOwnedPasses] = useState<Map<string, SeriesPass>>(new Map());
   const [totalSpent, setTotalSpent] = useState(0);
   const account = useActiveAccount();
+
+  useEffect(() => {
+    if (!account?.address) return;
+    if (!import.meta.env.VITE_EDITION_DROP_ADDRESS) return;
+
+    const checkOwnedPasses = async () => {
+      try {
+        const contract = getContract({
+          client,
+          chain: baseSepolia,
+          address: import.meta.env.VITE_EDITION_DROP_ADDRESS,
+        });
+
+        const newPasses = new Map<string, SeriesPass>();
+
+        for (const [seriesId, tokenIds] of Object.entries(TOKEN_ID_MAP)) {
+          if (!tokenIds) continue;
+
+          const readerBal = await balanceOf({
+            contract,
+            owner: account.address,
+            tokenId: BigInt(tokenIds.reader),
+          });
+          if (readerBal > 0n) {
+            newPasses.set(seriesId, {
+              tier: 'reader',
+              tokenId: tokenIds.reader,
+              mintedAt: Date.now(),
+              txHash: '',
+            });
+          }
+
+          if (tokenIds.patron !== null) {
+            const patronBal = await balanceOf({
+              contract,
+              owner: account.address,
+              tokenId: BigInt(tokenIds.patron),
+            });
+            if (patronBal > 0n) {
+              newPasses.set(seriesId, {
+                tier: 'patron',
+                tokenId: tokenIds.patron,
+                mintedAt: Date.now(),
+                txHash: '',
+              });
+            }
+          }
+        }
+
+        if (newPasses.size > 0) {
+          setOwnedPasses(newPasses);
+        }
+      } catch (err) {
+        console.error('Failed to check owned passes:', err);
+      }
+    };
+
+    checkOwnedPasses();
+  }, [account?.address]);
 
   const spendCoins = (amount: number, episodeKey: string): boolean => {
     if (balance < amount) return false;
@@ -79,17 +138,16 @@ export function CoinProvider({ children }: { children: ReactNode }) {
       });
 
       const result = await sendTransaction({ transaction: tx, account });
-      
-      // Add to owned passes
+
       const newPass: SeriesPass = {
         tier,
         tokenId,
         mintedAt: Date.now(),
         txHash: result.transactionHash,
       };
-      
+
       setOwnedPasses(prev => new Map(prev).set(seriesId, newPass));
-      
+
       return { success: true, txHash: result.transactionHash };
     } catch (error) {
       console.error('Pass purchase failed:', error);

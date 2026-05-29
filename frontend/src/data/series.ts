@@ -63,6 +63,32 @@ function makeEpisodes(count: number, bank: number, hasPatronBonus = false): Epis
 
 export const ALL_SERIES: Series[] = [
   {
+    id: 'neon-requiem',
+    title: 'Neon Requiem',
+    author: 'Yuki Tanaka',
+    genre: 'Action',
+    description: 'In a city where music is forbidden, a street musician wages a one-person revolution through sound. Every chord is defiance. Every beat could be her last.',
+    coverGradient: 'linear-gradient(145deg, #0a0012 0%, #2d0042 55%, #6b0080 100%)',
+    bannerGradient: 'linear-gradient(180deg, #0a0012 0%, #2d0042 70%, #000 100%)',
+    accentColor: '#9b00cc',
+    episodes: [
+      ...makeEpisodes(10, 0),
+      {
+        id: 'ep-bonus',
+        number: 11,
+        title: 'Patron Cut: Behind the Frequency',
+        isFree: false,
+        coinCost: 0,
+        isPatronOnly: true,
+        isBonus: true,
+      },
+    ],
+    passes: {
+      reader: { tokenId: 0, priceEth: '0.001', label: 'Reader Pass' },
+      patron: { tokenId: 1, priceEth: '0.0015', label: 'Patron Pass' },
+    },
+  },
+  {
     id: 'midnight-bloom',
     title: 'Midnight Bloom',
     author: 'Sera Moon',
